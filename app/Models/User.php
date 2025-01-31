@@ -20,6 +20,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'no_wa',
+        'alamat',
+        'role',
         'password',
     ];
 
@@ -42,4 +45,9 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function Transaksi()
+    {
+        return $this->hasMany(Transaksi::class);
+    }
 }
