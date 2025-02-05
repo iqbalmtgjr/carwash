@@ -26,6 +26,15 @@ class TransaksiResource extends Resource
     protected static ?string $slug = 'transaksi';
     protected static ?string $label = 'Transaksi';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        if (auth()->user()->role == 'admin') {
+            return true;
+        }
+
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

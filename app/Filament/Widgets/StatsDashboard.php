@@ -4,11 +4,13 @@ namespace App\Filament\Widgets;
 
 use App\Models\Transaksi;
 use App\Models\Pengeluaran;
+use App\Models\Bagipendapatan;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
 class StatsDashboard extends BaseWidget
 {
+
     protected function getStats(): array
     {
         $get_layanan = Transaksi::count();
@@ -23,6 +25,15 @@ class StatsDashboard extends BaseWidget
             return $value;
         }, $pendapatan_per_hari);
 
+        if (auth()->user()->role == 'user') {
+            // $total_pendapatan = Transaksi::where('user_id', auth()->user()->id)->get();
+            $total_pendapatan = Bagipendapatan::query()
+                ->where('user_id', auth()->user()->id)
+                // ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
+                ->get();
+            // ->sum('bagian_karyawan');
+        }
+
         $total_pengeluaran = Pengeluaran::get();
         $pengeluaran_per_hari = [];
         foreach ($total_pengeluaran as $pengeluaran) {
@@ -33,18 +44,34 @@ class StatsDashboard extends BaseWidget
             return $value;
         }, $pengeluaran_per_hari);
 
-        return [
-            Stat::make('Total Transaksi', $get_layanan),
-            Stat::make('Total Pengeluaran', 'Rp. ' . number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.'))
-                ->description(number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
-                ->descriptionIcon('heroicon-m-arrow-trending-up')
-                ->chart($pengeluaran_per_hari)
-                ->color('info'),
-            Stat::make('Total Pendapatan', 'Rp. ' . number_format(collect($total_pendapatan)->sum('layanan.harga'), 0, ',', '.'))
-                ->description(number_format(collect($total_pendapatan)->sum('layanan.harga') - collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
-                ->descriptionIcon('heroicon-m-arrow-trending-up')
-                ->chart($pendapatan_per_hari)
-                ->color('success'),
-        ];
+        if (auth()->user()->role == 'user') {
+            return [
+                Stat::make('Total Transaksi', $get_layanan),
+                // Stat::make('Total Pengeluaran', 'Rp. ' . number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.'))
+                //     ->description(number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
+                //     ->descriptionIcon('heroicon-m-arrow-trending-up')
+                //     ->chart($pengeluaran_per_hari)
+                //     ->color('info'),
+                Stat::make('Total Pendapatan', 'Rp. ' . number_format(collect($total_pendapatan)->sum('bagian_karyawan'), 0, ',', '.'))
+                    ->description(number_format(collect($total_pendapatan)->sum('bagian_karyawan') - collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
+                    ->descriptionIcon('heroicon-m-arrow-trending-up')
+                    ->chart($pendapatan_per_hari)
+                    ->color('success'),
+            ];
+        } else {
+            return [
+                Stat::make('Total Transaksi', $get_layanan),
+                Stat::make('Total Pengeluaran', 'Rp. ' . number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.'))
+                    ->description(number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
+                    ->descriptionIcon('heroicon-m-arrow-trending-up')
+                    ->chart($pengeluaran_per_hari)
+                    ->color('info'),
+                Stat::make('Total Pendapatan', 'Rp. ' . number_format(collect($total_pendapatan)->sum('layanan.harga'), 0, ',', '.'))
+                    ->description(number_format(collect($total_pendapatan)->sum('layanan.harga') - collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
+                    ->descriptionIcon('heroicon-m-arrow-trending-up')
+                    ->chart($pendapatan_per_hari)
+                    ->color('success'),
+            ];
+        }
     }
 }

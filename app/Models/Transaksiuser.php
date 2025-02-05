@@ -11,6 +11,7 @@ class Transaksiuser extends Model
 
     protected $guarded = ['id'];
     protected $table = 'transaksi_user';
+    public $timestamps = false;
 
     public function transaksi()
     {

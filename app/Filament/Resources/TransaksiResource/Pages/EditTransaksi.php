@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\TransaksiResource\Pages;
 
-use App\Filament\Resources\TransaksiResource;
 use Filament\Actions;
+use App\Models\Transaksi;
+use App\Models\Transaksiuser;
+use App\Models\Bagipendapatan;
 use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\TransaksiResource;
 
 class EditTransaksi extends EditRecord
 {
@@ -16,6 +19,32 @@ class EditTransaksi extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    public function beforeSave()
+    {
+        $transaksiuser = Transaksiuser::where('transaksi_id', $this->record->id)->get();
+        foreach ($transaksiuser as $bagi) {
+            $bagi->delete();
+        }
+
+        Bagipendapatan::where('transaksi_id', $this->record->id)->delete();
+    }
+
+    protected function afterSave(): void
+    {
+        $cek_transaksi = Transaksi::find($this->record->id);
+        $get_pembagian = $cek_transaksi->layanan->bagi_karyawan;
+        $transaksiuser = Transaksiuser::where('transaksi_id', $this->record->id)->get();
+        $bagi_rata = $get_pembagian / $transaksiuser->count();
+        foreach ($transaksiuser as $bagi) {
+            Bagipendapatan::create([
+                'transaksi_id' => $this->record->id,
+                'user_id' => $bagi->user_id,
+                'bagian_karyawan' => $bagi_rata,
+            ]);
+        }
+    }
+
 
     protected function getRedirectUrl(): string
     {

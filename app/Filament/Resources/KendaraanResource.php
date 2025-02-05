@@ -25,6 +25,14 @@ class KendaraanResource extends Resource
     protected static ?string $label = 'Kendaraan';
     protected static ?string $navigationGroup = 'Master';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        if (auth()->user()->role == 'admin') {
+            return true;
+        }
+
+        return false;
+    }
     public static function form(Form $form): Form
     {
         return $form

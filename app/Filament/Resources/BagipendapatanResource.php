@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
 use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -13,9 +12,7 @@ use Filament\Tables\Grouping\Group;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\BagipendapatanResource\Pages;
-use App\Filament\Resources\BagipendapatanResource\RelationManagers;
 
 class BagipendapatanResource extends Resource
 {
@@ -25,6 +22,15 @@ class BagipendapatanResource extends Resource
     protected static ?string $navigationLabel = 'Bagi Pendapatan';
     protected static ?string $slug = 'bagi-pendapatan';
     protected static ?string $label = 'Bagi Pendapatan';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        if (auth()->user()->role == 'admin') {
+            return true;
+        }
+
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
@@ -37,6 +43,7 @@ class BagipendapatanResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultPaginationPageOption('all')
             ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
             ->columns([
                 TextColumn::make('user.name')
@@ -115,7 +122,7 @@ class BagipendapatanResource extends Resource
         return [
             'index' => Pages\ListBagipendapatans::route('/'),
             'create' => Pages\CreateBagipendapatan::route('/create'),
-            'edit' => Pages\EditBagipendapatan::route('/{record}/edit'),
+            // 'edit' => Pages\EditBagipendapatan::route('/{record}/edit'),
         ];
     }
 }

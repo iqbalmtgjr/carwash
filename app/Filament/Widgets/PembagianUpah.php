@@ -12,10 +12,13 @@ class PembagianUpah extends BaseWidget
 {
     use InteractsWithPageTable;
 
-    protected function getHidden(): bool
-    {
-        return request()->routeIs('admin');
-    }
+    // public static function canView(): bool
+    // {
+    //     if (auth()->user()->role == 'admin') {
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     protected function getTablePage(): string
     {
@@ -24,24 +27,35 @@ class PembagianUpah extends BaseWidget
 
     protected function getStats(): array
     {
-        $total_pendapatan = Bagipendapatan::query()
-            ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
-            ->get()
-            ->groupBy('user_id')
-            ->map(function ($group) {
-                return [
-                    'user' => $group->first()->user->name,
-                    'total' => $group->sum('bagian_karyawan'),
-                ];
-            })
-            ->sortByDesc('total')
-            ->values();
-
-
         $stats = [];
-        foreach ($total_pendapatan as $pembagian) {
-            $stats[] = Stat::make($pembagian['user'], 'Rp. ' . number_format($pembagian['total'], 0, ',', '.'))
+
+        if (auth()->user()->role == 'user') {
+            $total_pendapatan = Bagipendapatan::query()
+                ->where('user_id', auth()->user()->id)
+                ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
+                ->get()
+                ->sum('bagian_karyawan');
+
+            $stats[] = Stat::make(auth()->user()->name, 'Rp. ' . number_format($total_pendapatan, 0, ',', '.'))
                 ->color('success');
+        } else {
+            $total_pendapatan = Bagipendapatan::query()
+                ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
+                ->get()
+                ->groupBy('user_id')
+                ->map(function ($group) {
+                    return [
+                        'user' => $group->first()->user->name,
+                        'total' => $group->sum('bagian_karyawan'),
+                    ];
+                })
+                ->sortByDesc('total')
+                ->values();
+
+            foreach ($total_pendapatan as $pembagian) {
+                $stats[] = Stat::make($pembagian['user'], 'Rp. ' . number_format($pembagian['total'], 0, ',', '.'))
+                    ->color('success');
+            }
         }
 
         return $stats;

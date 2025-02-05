@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Filament\Resources\BagipendapatanResource\Pages;
+namespace App\Filament\Resources\PendapatansayaResource\Pages;
 
 use Filament\Actions;
 use App\Filament\Widgets\PembagianUpah;
 use Filament\Resources\Pages\ListRecords;
-use App\Filament\Resources\BagipendapatanResource;
+use App\Filament\Resources\PendapatansayaResource;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
 
-class ListBagipendapatans extends ListRecords
+class ListPendapatansayas extends ListRecords
 {
     use ExposesTableToWidgets;
-    protected static string $resource = BagipendapatanResource::class;
+    protected static string $resource = PendapatansayaResource::class;
 
-    protected function getActions(): array
+    protected function getHeaderActions(): array
     {
         return [
             // Actions\CreateAction::make(),

@@ -8,14 +8,11 @@ use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
-use Filament\Tables\Columns\SelectColumn;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\UserResource\Pages;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\UserResource\RelationManagers;
 
 class UserResource extends Resource
 {
@@ -26,6 +23,15 @@ class UserResource extends Resource
     protected static ?string $slug = 'kelola-user';
     protected static ?string $label = 'Kelola User';
     protected static ?string $navigationGroup = 'Master';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        if (auth()->user()->role == 'admin') {
+            return true;
+        }
+
+        return false;
+    }
 
     public static function form(Form $form): Form
     {
@@ -57,7 +63,11 @@ class UserResource extends Resource
                 TextInput::make('password')
                     ->label('Kata Sandi')
                     ->password()
-                    ->visible(fn($livewire) => $livewire instanceof \App\Filament\Resources\UserResource\Pages\CreateUser),
+                    ->dehydrateStateUsing(fn($state) => Hash::make($state))
+                    ->dehydrated(fn($state) => filled($state))
+                    ->required(fn(string $operation): bool => $operation === 'create')
+                    ->maxLength(255)
+                // ->visible(fn($livewire) => $livewire instanceof \App\Filament\Resources\UserResource\Pages\CreateUser),
             ]);
     }
 
