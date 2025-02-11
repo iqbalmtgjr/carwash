@@ -6,6 +6,7 @@ use Filament\Actions;
 use App\Filament\Widgets\PembagianUpah;
 use Filament\Resources\Pages\ListRecords;
 use App\Filament\Resources\BagipendapatanResource;
+use App\Filament\Widgets\MasukKeluar;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
 
 class ListBagipendapatans extends ListRecords
@@ -24,6 +25,7 @@ class ListBagipendapatans extends ListRecords
     {
         return [
             PembagianUpah::class,
+            MasukKeluar::class,
         ];
     }
 }

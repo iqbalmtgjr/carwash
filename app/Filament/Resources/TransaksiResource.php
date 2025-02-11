@@ -84,6 +84,12 @@ class TransaksiResource extends Resource
                             ->required()
                             ->placeholder('Contoh: KB 000 ER')
                             ->label('Plat'),
+                        TextInput::make('no_wa')
+                            ->tel()
+                            ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
+                            ->numeric()
+                            ->placeholder('Contoh: 081122334455')
+                            ->label('No Whatsapp'),
                     ])
                     ->columnSpan(2),
                 // CreateAction::make()

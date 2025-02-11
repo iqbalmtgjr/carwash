@@ -46,6 +46,11 @@ class KendaraanResource extends Resource
                 TextInput::make('plat')
                     ->label('Plat')
                     ->required(),
+                TextInput::make('no_wa')
+                    ->label('No Whatsapp')
+                    ->tel()
+                    ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
+                    ->numeric()
             ]);
     }
 
@@ -62,6 +67,13 @@ class KendaraanResource extends Resource
                     ->searchable(),
                 TextColumn::make('plat')
                     ->label('Plat')
+                    ->searchable(),
+                TextColumn::make('no_wa')
+                    ->label('No Whatsapp')
+                    ->searchable(),
+                TextColumn::make('created_at')
+                    ->label('Tanggal Masuk')
+                    ->dateTime('d/m/Y')
                     ->searchable(),
             ])
             ->filters([
