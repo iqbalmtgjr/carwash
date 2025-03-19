@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Kendaraan;
 use App\Models\Transaksi;
+use App\Models\Pengeluaran;
 use Filament\Widgets\ChartWidget;
 
 class PendapatanChart extends ChartWidget
@@ -24,9 +25,8 @@ class PendapatanChart extends ChartWidget
     {
         $data = [];
         for ($i = 1; $i <= 30; $i++) {
-            $total_pendapatan = Transaksi::whereDay('transaksi.created_at', $i)
-                ->join('layanan', 'transaksi.layanan_id', '=', 'layanan.id')
-                ->sum('layanan.harga');
+            $total_pendapatan = Transaksi::whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])->get()->sum(fn(Transaksi $transaksi): int => $transaksi->layanan->harga);
+            $total_pengeluaran = Pengeluaran::whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])->sum('jumlah');
             $data[] = $total_pendapatan;
         }
 

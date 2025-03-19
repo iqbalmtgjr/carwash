@@ -13,6 +13,7 @@ use App\Filament\Resources\BagipendapatanResource\Pages\ListBagipendapatans;
 class MasukKeluar extends BaseWidget
 {
     use InteractsWithPageTable;
+    protected static bool $isDiscovered = false;
 
     public static function canView(): bool
     {

@@ -43,7 +43,7 @@ class BagipendapatanResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultPaginationPageOption('all')
+            // ->defaultPaginationPageOption('all')
             ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
             ->columns([
                 TextColumn::make('user.name')

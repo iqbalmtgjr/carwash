@@ -11,6 +11,7 @@ use App\Filament\Resources\BagipendapatanResource\Pages\ListBagipendapatans;
 class PembagianUpah extends BaseWidget
 {
     use InteractsWithPageTable;
+    protected static bool $isDiscovered = false;
 
     // public static function canView(): bool
     // {
