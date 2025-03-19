@@ -62,8 +62,8 @@ class MasukKeluar extends BaseWidget
 
         $pemasukan_kotor = $lihat_harga->sum('harga');
 
-        $pendapatan_ee = $pemasukan_bersih * 0.4;
-        $pendapatan_ivan = $pemasukan_bersih * 0.6;
+        $pendapatan_ee = $pemasukan_bersih * 0.5;
+        $pendapatan_ivan = $pemasukan_bersih * 0.5;
 
         return [
             Stat::make('Pemasukan Kotor', 'Rp. ' . number_format($pemasukan_kotor, 0, ',', '.'))->color('success'),
