@@ -44,7 +44,7 @@ class BagipendapatanResource extends Resource
     {
         return $table
             // ->defaultPaginationPageOption('all')
-            ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
+            ->query(Bagipendapatan::query()->orderBy('id', 'desc'))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Pencuci')
@@ -69,6 +69,7 @@ class BagipendapatanResource extends Resource
                     ->searchable(),
             ])
             ->filters([
+                Filter::make('created_today')->default(),
                 Filter::make('created_at')
                     ->label('Tanggal Transaksi')
                     ->form([

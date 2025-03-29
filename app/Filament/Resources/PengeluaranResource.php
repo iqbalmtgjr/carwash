@@ -95,6 +95,7 @@ class PengeluaranResource extends Resource
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
+                    ->default()
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
             ])
             ->actions([

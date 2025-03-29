@@ -100,7 +100,7 @@ class TransaksiResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Transaksi::query()->orderBy('created_at', 'desc'))
+            ->query(Transaksi::query()->orderBy('id', 'asc'))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Nama Pencuci')
@@ -125,6 +125,7 @@ class TransaksiResource extends Resource
                     ->searchable(),
             ])
             ->filters([
+                Filter::make('created_today')->default(),
                 Filter::make('created_at')
                     ->label('Tanggal Transaksi')
                     ->form([
