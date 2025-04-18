@@ -57,6 +57,7 @@ class LayananResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultPaginationPageOption('all')
             ->query(Layanan::query()->orderBy('created_at', 'desc'))
             ->columns([
                 TextColumn::make('nama_layanan')

@@ -4,67 +4,123 @@ namespace App\Filament\Resources;
 
 use Filament\Tables;
 use Filament\Forms\Form;
+use App\Models\Transaksi;
 use Filament\Tables\Table;
-use App\Models\Bagipendapatan;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\Filter;
-use Filament\Tables\Grouping\Group;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\PendapatansayaResource\Pages;
+use App\Filament\Resources\TransaksiResource\Pages;
 
-class PendapatansayaResource extends Resource
+class TransaksiResource extends Resource
 {
-    protected static ?string $model = Bagipendapatan::class;
+    protected static ?string $model = Transaksi::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
-    protected static ?string $navigationLabel = 'Pendapatan Saya';
-    protected static ?string $slug = 'pendapatan-saya';
-    protected static ?string $label = 'Pendapatan Saya';
+    protected static ?string $navigationIcon = 'heroicon-m-arrows-up-down';
+    protected static ?string $navigationLabel = 'Transaksi';
+    protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'transaksi';
+    protected static ?string $label = 'Transaksi';
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (auth()->user()->role == 'user') {
+        if (auth()->user()->role == 'admin') {
             return true;
         }
 
         return false;
     }
 
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                //
+                Select::make('user_id')
+                    ->multiple()
+                    ->relationship('user', 'name')
+                    ->required()
+                    ->label('Pencuci')
+                    ->columnSpan([
+                        'default' => 2,
+                        'md' => 1,
+                        'lg' => 1,
+                        'xl' => 1,
+                    ]),
+                Select::make('layanan_id')
+                    ->relationship('layanan', 'nama_layanan')
+                    ->options(function () {
+                        return \App\Models\Layanan::all()->pluck('formatted_option', 'id');
+                    })
+                    ->required()
+                    ->columnSpan([
+                        'default' => 2,
+                        'md' => 1,
+                        'lg' => 1,
+                        'xl' => 1,
+                    ]),
+                DatePicker::make('created_at')
+                    ->required()
+                    ->default(now())
+                    ->label('Tanggal'),
+                Repeater::make('kendaraan')
+                    ->relationship()
+                    ->schema([
+                        Select::make('tipe')
+                            ->required()
+                            ->label('Tipe')
+                            ->options([
+                                'mobil' => 'Mobil',
+                                'motor' => 'Motor',
+                            ]),
+                        TextInput::make('merk')
+                            ->required()
+                            ->placeholder('Contoh: Agya')
+                            ->label('Merk'),
+                        TextInput::make('plat')
+                            ->required()
+                            ->placeholder('Contoh: KB 000 ER')
+                            ->label('Plat'),
+                        TextInput::make('no_wa')
+                            ->tel()
+                            ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
+                            ->numeric()
+                            ->placeholder('Contoh: 081122334455')
+                            ->label('No Whatsapp'),
+                    ])
+                    ->columnSpan(2),
+                // CreateAction::make()
+                //     ->successRedirectUrl(route('filament.admin.resources.transaksi.create')),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultPaginationPageOption('all')
-            ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
+            ->query(Transaksi::query()->orderBy('id', 'asc'))
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('Pencuci')
+                    ->label('Nama Pencuci')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('transaksi.layanan.nama_layanan')
+                TextColumn::make('layanan.nama_layanan')
                     ->label('Nama Layanan')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('transaksi.kendaraan.merk')
+                TextColumn::make('kendaraan.merk')
                     ->label('Merk')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('transaksi.kendaraan.plat')
+                TextColumn::make('kendaraan.plat')
                     ->label('Plat')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('bagian_karyawan')
-                    ->label('Bagian Karyawan')
+                TextColumn::make('layanan.harga')
+                    ->label('Harga')
                     ->money('IDR')
                     ->sortable()
                     ->searchable(),
@@ -79,36 +135,28 @@ class PendapatansayaResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                array_key_exists('created_from', $data) ? $data['created_from'] : null,
+                                $data['created_from'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                array_key_exists('created_until', $data) ? $data['created_until'] : null,
+                                $data['created_until'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
+                    ->default()
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
             ])
             ->actions([
-                // Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->defaultGroup('transaksi.kendaraan.plat')
-            ->groups([
-                Group::make('transaksi.kendaraan.merk')
-                    ->label('Merk')
-                    ->collapsible(),
-                Group::make('transaksi.kendaraan.plat')
-                    ->label('Plat')
-                    ->collapsible(),
             ]);
-        // ->groupsOnly();
     }
 
     public static function getRelations(): array
@@ -121,9 +169,9 @@ class PendapatansayaResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPendapatansayas::route('/'),
-            // 'create' => Pages\CreatePendapatansaya::route('/create'),
-            // 'edit' => Pages\EditPendapatansaya::route('/{record}/edit'),
+            'index' => Pages\ListTransaksis::route('/'),
+            'create' => Pages\CreateTransaksi::route('/create'),
+            'edit' => Pages\EditTransaksi::route('/{record}/edit'),
         ];
     }
 }

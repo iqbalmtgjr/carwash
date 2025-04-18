@@ -13,6 +13,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\BagipendapatanResource\Pages;
+use Carbon\Carbon;
 
 class BagipendapatanResource extends Resource
 {
@@ -20,6 +21,7 @@ class BagipendapatanResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationLabel = 'Bagi Pendapatan';
+    protected static ?int $navigationSort = 3;
     protected static ?string $slug = 'bagi-pendapatan';
     protected static ?string $label = 'Bagi Pendapatan';
 
@@ -42,9 +44,18 @@ class BagipendapatanResource extends Resource
 
     public static function table(Table $table): Table
     {
+        // Menentukan rentang tanggal seminggu terakhir
+        // $startOfWeek = Carbon::now()->subWeek()->startOfDay(); // Mulai dari 7 hari yang lalu
+        // $endOfWeek = Carbon::now()->endOfDay(); // Sampai hari ini
+
         return $table
             // ->defaultPaginationPageOption('all')
-            ->query(Bagipendapatan::query()->orderBy('id', 'desc'))
+            // ->query(
+            //     Bagipendapatan::query()
+            //         ->whereBetween('created_at', [$startOfWeek, $endOfWeek]) // Filter data seminggu terakhir
+            //         ->orderBy('created_at', 'desc')
+            // )
+            ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Pencuci')
@@ -89,6 +100,7 @@ class BagipendapatanResource extends Resource
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
+                    ->default()
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
             ])
             ->actions([
@@ -108,7 +120,6 @@ class BagipendapatanResource extends Resource
                     ->label('Plat')
                     ->collapsible(),
             ]);
-        // ->groupsOnly();
     }
 
     public static function getRelations(): array
