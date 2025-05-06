@@ -4,7 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Kendaraan;
 use App\Models\Transaksi;
-use App\Models\Pengeluaran;
+use App\Models\Bagipendapatan;
 use Filament\Widgets\ChartWidget;
 
 class PendapatanChart extends ChartWidget
@@ -23,10 +23,19 @@ class PendapatanChart extends ChartWidget
 
     protected function getData(): array
     {
+        $now = now();
+        $start = $now->copy()->startOfWeek();
+        $end = $now->copy()->endOfWeek();
+        
         $data = [];
         for ($i = 1; $i <= 30; $i++) {
-            $total_pendapatan = Transaksi::whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])->get()->sum(fn(Transaksi $transaksi): int => $transaksi->layanan->harga);
-            $total_pengeluaran = Pengeluaran::whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])->sum('jumlah');
+            if(auth()->user()->role != 'admin'){
+                $total_pendapatan = Bagipendapatan::where('user_id', auth()->user()->id)
+                                    ->whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])
+                                    ->sum('bagian_karyawan');
+            }else{
+                $total_pendapatan = Transaksi::whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])->get()->sum(fn(Transaksi $transaksi): int => $transaksi->layanan->harga);
+            }
             $data[] = $total_pendapatan;
         }
 

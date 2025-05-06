@@ -67,13 +67,13 @@ class MasukKeluar extends BaseWidget
         $pendapatan_ivan = $pemasukan_bersih * 0.5;
 
         return [
-            Stat::make('Pemasukan Kotor', 'Rp. ' . number_format($pemasukan_kotor, 0, ',', '.'))->color('success'),
+            // Stat::make('Pemasukan Kotor', 'Rp. ' . number_format($pemasukan_kotor, 0, ',', '.'))->color('success'),
             Stat::make('Pemasukan Bersih Owner', 'Rp. ' . number_format($pemasukan_bersih, 0, ',', '.'))->color('success'),
-            Stat::make('Pengeluaran', 'Rp. ' . number_format($pengeluaran, 0, ',', '.'))->color('success'),
+            Stat::make('Pemasukan Setengah Owner', 'Rp. ' . number_format($pendapatan_ee, 0, ',', '.'))->color('success'),
+            // Stat::make('Pengeluaran', 'Rp. ' . number_format($pengeluaran, 0, ',', '.'))->color('success'),
             Stat::make('Uang di Tangan', 'Rp. ' . number_format($total_gaji_karyawan + $pendapatan_ee + $pendapatan_ivan, 0, ',', '.'))->color('success'),
             Stat::make('Total Gaji Karyawan', 'Rp. ' . number_format($total_gaji_karyawan, 0, ',', '.'))->color('success'),
-            Stat::make('Pemasukan Owner (Ee)', 'Rp. ' . number_format($pendapatan_ee, 0, ',', '.'))->color('success'),
-            Stat::make('Pemasukan Owner (Ivan)', 'Rp. ' . number_format($pendapatan_ivan, 0, ',', '.'))->color('success'),
+            // Stat::make('Pemasukan Owner (H)', 'Rp. ' . number_format($pendapatan_ivan, 0, ',', '.'))->color('success'),
         ];
     }
 }
