@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Kasbon;
 use App\Models\Bagipendapatan;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageTable;
@@ -31,7 +32,7 @@ class PembagianUpah extends BaseWidget
         $now = now();
         $start = $now->copy()->startOfWeek();
         $end = $now->copy()->endOfWeek();
-        
+
         $stats = [];
 
         if (auth()->user()->role == 'user') {
@@ -42,18 +43,32 @@ class PembagianUpah extends BaseWidget
                 ->get()
                 ->sum('bagian_karyawan');
 
+            $kasbon = Kasbon::query()
+                ->where('user_id', auth()->user()->id)
+                ->whereBetween('created_at', [$start, $end])
+                ->sum('nominal');
+
+            $total_pendapatan -= $kasbon;
+
             $stats[] = Stat::make(auth()->user()->name, 'Rp. ' . number_format($total_pendapatan, 0, ',', '.'))
                 ->color('success');
         } else {
             $total_pendapatan = Bagipendapatan::query()
                 ->whereBetween('created_at', [$start, $end])
-                // ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
                 ->get()
                 ->groupBy('user_id')
                 ->map(function ($group) {
+                    $now = now();
+                    $start = $now->copy()->startOfWeek();
+                    $end = $now->copy()->endOfWeek();
+                    $kasbon = Kasbon::query()
+                        ->where('user_id', $group->first()->user_id)
+                        ->whereBetween('created_at', [$start, $end])
+                        ->sum('nominal');
+
                     return [
                         'user' => $group->first()->user->name,
-                        'total' => $group->sum('bagian_karyawan'),
+                        'total' => $group->sum('bagian_karyawan') - $kasbon,
                     ];
                 })
                 ->sortByDesc('total')

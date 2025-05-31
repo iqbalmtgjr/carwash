@@ -12,6 +12,6 @@ class CreateKasbon extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return route('filament.admin.resources.kasbon.index');
+        return route('filament.admin.resources.Kasbon.index');
     }
 }
