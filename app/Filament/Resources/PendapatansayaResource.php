@@ -17,7 +17,7 @@ use Filament\Tables\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\TransaksiResource\Pages;
 
-class TransaksiResource extends Resource
+class PendapatansayaResource extends Resource
 {
     protected static ?string $model = Transaksi::class;
 

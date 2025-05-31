@@ -23,6 +23,7 @@ class User extends Authenticatable
         'no_wa',
         'alamat',
         'role',
+        'is_active',
         'password',
     ];
 

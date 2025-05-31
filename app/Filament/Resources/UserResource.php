@@ -60,6 +60,14 @@ class UserResource extends Resource
                 TextInput::make('alamat')
                     ->required()
                     ->label('Alamat'),
+                Select::make('is_active')
+                    ->required()
+                    ->default(1)
+                    ->options([
+                        0 => 'Tidak Aktif',
+                        1 => 'Aktif',
+                    ])
+                    ->label('Status Akun'),
                 TextInput::make('password')
                     ->label('Kata Sandi')
                     ->password()
@@ -97,6 +105,17 @@ class UserResource extends Resource
                         'admin' => 'success',
                         'user' => 'info',
                     }),
+                TextColumn::make('is_active')
+                    ->label('Status Aktif')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        '1' => 'success',
+                        '0' => 'danger',
+                    })
+                    ->sortable()
+                    ->searchable()
+                    ->formatStateUsing(fn(int $state): string => $state === 1 ? 'Aktif' : 'Tidak Aktif'),
+
             ])
             ->filters([
                 // Tables\Filters\TrashedFilter::make(),

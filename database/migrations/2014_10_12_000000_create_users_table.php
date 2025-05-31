@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('role')->default('user');
             $table->string('no_wa')->nullable();
             $table->text('alamat')->nullable();
+            $table->boolean('is_active')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

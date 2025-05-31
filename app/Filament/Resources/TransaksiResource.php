@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Models\User;
 use Filament\Tables;
 use Filament\Forms\Form;
 use App\Models\Transaksi;
@@ -40,8 +41,9 @@ class TransaksiResource extends Resource
             ->schema([
                 Select::make('user_id')
                     ->multiple()
-                    ->relationship('user', 'name')
+                    // ->relationship('user', 'name')
                     ->required()
+                    ->options(User::where('is_active', true)->pluck('name', 'id'))
                     ->label('Pencuci')
                     ->columnSpan([
                         'default' => 2,
@@ -49,6 +51,10 @@ class TransaksiResource extends Resource
                         'lg' => 1,
                         'xl' => 1,
                     ]),
+                // Select::make('user_id')
+                //     ->required()
+                //     ->options(User::where('is_active', true)->pluck('name', 'id'))
+                //     ->label('Karyawan'),
                 Select::make('layanan_id')
                     ->relationship('layanan', 'nama_layanan')
                     ->options(function () {
