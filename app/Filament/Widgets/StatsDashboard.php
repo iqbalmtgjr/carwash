@@ -41,14 +41,14 @@ class StatsDashboard extends BaseWidget
         });
 
         $pemasukan_bersih = $lihat_harga->sum('harga') - $pengeluaran - $total_gaji_karyawan;
-        
+
         $total_pendapatan_karyawanperminggu = Bagipendapatan::query()
-                ->where('user_id', auth()->user()->id)
-                ->where('created_at', '>=', $start)
-                ->where('created_at', '<=', $end)
-                ->get()
-                ->sum('bagian_karyawan');
-        
+            ->where('user_id', auth()->user()->id)
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<=', $end)
+            ->get()
+            ->sum('bagian_karyawan');
+
         $get_layanan = Transaksi::count();
 
         $total_pendapatan = Transaksi::get();

@@ -29,3 +29,7 @@ Route::get('/migrate', function () {
 Route::get('/', function () {
     return redirect('admin');
 });
+
+Route::get('/tgl', function () {
+    return date('Y-m-d');
+});

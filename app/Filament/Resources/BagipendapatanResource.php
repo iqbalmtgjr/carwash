@@ -79,6 +79,30 @@ class BagipendapatanResource extends Resource
                     ->sortable()
                     ->searchable(),
             ])
+            // ->filters([
+            //     Filter::make('created_today')->default(),
+            //     Filter::make('created_at')
+            //         ->label('Tanggal Transaksi')
+            //         ->form([
+            //             DatePicker::make('created_from'),
+            //             DatePicker::make('created_until'),
+            //         ])
+            //         ->query(function (Builder $query, array $data): Builder {
+            //             return $query
+            //                 ->when(
+            //                     array_key_exists('created_from', $data) ? $data['created_from'] : null,
+            //                     fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+            //                 )
+            //                 ->when(
+            //                     array_key_exists('created_until', $data) ? $data['created_until'] : null,
+            //                     fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+            //                 );
+            //         }),
+            //     Filter::make('created_today')
+            //         ->label('Transaksi Hari ini')
+            //         ->default()
+            //         ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
+            // ])
             ->filters([
                 Filter::make('created_today')->default(),
                 Filter::make('created_at')
@@ -90,17 +114,16 @@ class BagipendapatanResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                array_key_exists('created_from', $data) ? $data['created_from'] : null,
+                                $data['created_from'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                array_key_exists('created_until', $data) ? $data['created_until'] : null,
+                                $data['created_until'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
-                    ->default()
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
             ])
             ->actions([
