@@ -17,6 +17,7 @@ use Carbon\Carbon;
 
 class BagipendapatanResource extends Resource
 {
+    //
     protected static ?string $model = Bagipendapatan::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
