@@ -36,6 +36,7 @@ class KasbonResource extends Resource
 
         return false;
     }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -48,7 +49,7 @@ class KasbonResource extends Resource
                     ->required()
                     ->placeholder('Tanpa titik. Contoh: 50000')
                     ->numeric()
-                    ->label('Jumlah Pengeluaran'),
+                    ->label('Jumlah nominal'),
                 TextInput::make('keterangan')
                     ->label('Keterangan'),
                 DatePicker::make('created_at')
@@ -65,12 +66,17 @@ class KasbonResource extends Resource
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Karyawan')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('nominal')
                     ->label('Nominal')
                     ->money('IDR')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('keterangan')
+                    ->label('Keterangan')
+                    ->searchable()
+                    ->limit(30),
                 TextColumn::make('created_at')
                     ->label('Tanggal Kasbon')
                     ->date('d/m/Y')
@@ -81,24 +87,29 @@ class KasbonResource extends Resource
                 Filter::make('created_at')
                     ->label('Tanggal Transaksi')
                     ->form([
-                        DatePicker::make('created_from'),
-                        DatePicker::make('created_until'),
+                        DatePicker::make('created_from')
+                            ->label('Dari Tanggal'),
+                        DatePicker::make('created_until')
+                            ->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['created_from'],
+                                $data['created_from'] ?? null,
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                $data['created_until'],
+                                $data['created_until'] ?? null,
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
-                    ->default()
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
+                Filter::make('created_this_week')
+                    ->label('Transaksi Minggu ini')
+                    ->default()
+                    ->query(fn(Builder $query) => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

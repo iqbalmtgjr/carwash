@@ -16,7 +16,7 @@ class Layanan extends Model
     {
         return "{$this->nama_layanan} - Rp. " . number_format($this->harga, 0, ',', '.');
     }
-
+    
     public function transaksi()
     {
         return $this->hasOne(Transaksi::class);

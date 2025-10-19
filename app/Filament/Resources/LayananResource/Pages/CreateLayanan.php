@@ -9,7 +9,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateLayanan extends CreateRecord
 {
     protected static string $resource = LayananResource::class;
-
+    
     protected function getRedirectUrl(): string
     {
         return route('filament.admin.resources.layanan.index');

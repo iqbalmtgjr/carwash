@@ -17,7 +17,6 @@ use Carbon\Carbon;
 
 class BagipendapatanResource extends Resource
 {
-    //
     protected static ?string $model = Bagipendapatan::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
@@ -45,18 +44,8 @@ class BagipendapatanResource extends Resource
 
     public static function table(Table $table): Table
     {
-        // Menentukan rentang tanggal seminggu terakhir
-        // $startOfWeek = Carbon::now()->subWeek()->startOfDay(); // Mulai dari 7 hari yang lalu
-        // $endOfWeek = Carbon::now()->endOfDay(); // Sampai hari ini
-
         return $table
-            // ->defaultPaginationPageOption('all')
-            // ->query(
-            //     Bagipendapatan::query()
-            //         ->whereBetween('created_at', [$startOfWeek, $endOfWeek]) // Filter data seminggu terakhir
-            //         ->orderBy('created_at', 'desc')
-            // )
-            ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
+            ->query(Bagipendapatan::query()->orderBy('id', 'desc'))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Pencuci')
@@ -80,52 +69,33 @@ class BagipendapatanResource extends Resource
                     ->sortable()
                     ->searchable(),
             ])
-            // ->filters([
-            //     Filter::make('created_today')->default(),
-            //     Filter::make('created_at')
-            //         ->label('Tanggal Transaksi')
-            //         ->form([
-            //             DatePicker::make('created_from'),
-            //             DatePicker::make('created_until'),
-            //         ])
-            //         ->query(function (Builder $query, array $data): Builder {
-            //             return $query
-            //                 ->when(
-            //                     array_key_exists('created_from', $data) ? $data['created_from'] : null,
-            //                     fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-            //                 )
-            //                 ->when(
-            //                     array_key_exists('created_until', $data) ? $data['created_until'] : null,
-            //                     fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-            //                 );
-            //         }),
-            //     Filter::make('created_today')
-            //         ->label('Transaksi Hari ini')
-            //         ->default()
-            //         ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
-            // ])
             ->filters([
-                Filter::make('created_today')->default(),
                 Filter::make('created_at')
                     ->label('Tanggal Transaksi')
                     ->form([
-                        DatePicker::make('created_from'),
-                        DatePicker::make('created_until'),
+                        DatePicker::make('created_from')
+                            ->label('Dari Tanggal'),
+                        DatePicker::make('created_until')
+                            ->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['created_from'],
+                                $data['created_from'] ?? null,
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                $data['created_until'],
+                                $data['created_until'] ?? null,
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
+                Filter::make('created_this_week')
+                    ->label('Transaksi Minggu ini')
+                    ->default()
+                    ->query(fn(Builder $query) => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
                 // Tables\Actions\EditAction::make(),
@@ -135,7 +105,6 @@ class BagipendapatanResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultGroup('transaksi.kendaraan.plat')
             ->groups([
                 Group::make('transaksi.kendaraan.merk')
                     ->label('Merk')

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Models\User;
 use Filament\Tables;
 use Filament\Forms\Form;
 use App\Models\Transaksi;
@@ -14,8 +13,10 @@ use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Actions\CreateAction;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\TransaksiResource\Pages;
+use App\Models\User;
 
 class TransaksiResource extends Resource
 {
@@ -23,6 +24,7 @@ class TransaksiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-m-arrows-up-down';
     protected static ?string $navigationLabel = 'Transaksi';
+    protected static ?int $navigationSort = 1;
     protected static ?string $slug = 'transaksi';
     protected static ?string $label = 'Transaksi';
 
@@ -41,26 +43,26 @@ class TransaksiResource extends Resource
             ->schema([
                 Select::make('user_id')
                     ->multiple()
-                    // ->relationship('user', 'name')
+                    ->relationship('user', 'name', function (Builder $query) {
+                        $query->where('is_active', 1);
+                    })
                     ->required()
-                    ->options(User::where('is_active', true)->pluck('name', 'id'))
                     ->label('Pencuci')
+                    ->searchable()
+                    ->preload()
                     ->columnSpan([
                         'default' => 2,
                         'md' => 1,
                         'lg' => 1,
                         'xl' => 1,
                     ]),
-                // Select::make('user_id')
-                //     ->required()
-                //     ->options(User::where('is_active', true)->pluck('name', 'id'))
-                //     ->label('Karyawan'),
                 Select::make('layanan_id')
                     ->relationship('layanan', 'nama_layanan')
                     ->options(function () {
                         return \App\Models\Layanan::all()->pluck('formatted_option', 'id');
                     })
                     ->required()
+                    ->searchable()
                     ->columnSpan([
                         'default' => 2,
                         'md' => 1,
@@ -97,16 +99,23 @@ class TransaksiResource extends Resource
                             ->label('No Whatsapp'),
                     ])
                     ->columnSpan(2),
-                // CreateAction::make()
-                //     ->successRedirectUrl(route('filament.admin.resources.transaksi.create')),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Transaksi::query()->orderBy('id', 'asc'))
+            ->query(Transaksi::query()->orderBy('id', 'desc'))
             ->columns([
+                TextColumn::make('kendaraan.merk')
+                    ->label('Merk')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('layanan.harga')
+                    ->label('Harga')
+                    ->money('IDR')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('user.name')
                     ->label('Nama Pencuci')
                     ->sortable()
@@ -115,42 +124,42 @@ class TransaksiResource extends Resource
                     ->label('Nama Layanan')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('kendaraan.merk')
-                    ->label('Merk')
-                    ->sortable()
-                    ->searchable(),
                 TextColumn::make('kendaraan.plat')
                     ->label('Plat')
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('layanan.harga')
-                    ->label('Harga')
-                    ->money('IDR')
-                    ->sortable()
-                    ->searchable(),
+                TextColumn::make('created_at')
+                    ->label('Tanggal')
+                    ->date('d/m/Y')
+                    ->sortable(),
             ])
             ->filters([
-                Filter::make('created_today')->default(),
                 Filter::make('created_at')
                     ->label('Tanggal Transaksi')
                     ->form([
-                        DatePicker::make('created_from'),
-                        DatePicker::make('created_until'),
+                        DatePicker::make('created_from')
+                            ->label('Dari Tanggal'),
+                        DatePicker::make('created_until')
+                            ->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['created_from'],
+                                $data['created_from'] ?? null,
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
-                                $data['created_until'],
+                                $data['created_until'] ?? null,
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
+                Filter::make('created_this_week')
+                    ->label('Transaksi Minggu ini')
+                    ->default()
+                    ->query(fn(Builder $query) => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

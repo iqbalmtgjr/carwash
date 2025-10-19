@@ -33,12 +33,18 @@ class Totalpengeluaran extends BaseWidget
         $start = $now->copy()->startOfDay();
         $end = $now->copy()->endOfDay();
 
-        $pengeluaran = Pengeluaran::query()
+        $pengeluaran_hariini = Pengeluaran::query()
             ->whereBetween('created_at', [$start, $end])
+            ->sum('jumlah');
+            
+        $pengeluaran = Pengeluaran::query()
+            // ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
+            ->whereBetween('created_at', [$this->getPageTableRecords()->min('created_at'), $this->getPageTableRecords()->max('created_at')])
             ->sum('jumlah');
 
         return [
-            Stat::make('Total Pengeluaran Hari Ini', 'Rp. ' . number_format($pengeluaran, 0, ',', '.'))->color('danger'),
+            Stat::make('Total Pengeluaran Hari Ini', 'Rp. ' . number_format($pengeluaran_hariini, 0, ',', '.'))->color('danger'),
+            Stat::make('Total Pengeluaran Filter', 'Rp. ' . number_format($pengeluaran, 0, ',', '.'))->color('danger'),
         ];
     }
 }

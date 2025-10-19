@@ -23,6 +23,7 @@ class PengeluaranResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Pengeluaran';
+    protected static ?int $navigationSort = 2;
     protected static ?string $slug = 'pengeluaran';
     protected static ?string $label = 'Pengeluaran';
 
@@ -59,7 +60,7 @@ class PengeluaranResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Pengeluaran::query()->orderBy('created_at', 'desc'))
+            ->query(Pengeluaran::query()->orderBy('id', 'asc'))
             ->columns([
                 TextColumn::make('pengeluaran')
                     ->label('Pengeluaran')
@@ -77,7 +78,7 @@ class PengeluaranResource extends Resource
             ])
             ->filters([
                 Filter::make('created_at')
-                    ->label('Tanggal Transaksi')
+                    ->label('Tanggal Pengeluaran')
                     ->form([
                         DatePicker::make('created_from'),
                         DatePicker::make('created_until'),
@@ -94,8 +95,8 @@ class PengeluaranResource extends Resource
                             );
                     }),
                 Filter::make('created_today')
-                    ->label('Transaksi Hari ini')
                     ->default()
+                    ->label('Transaksi Hari ini')
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
             ])
             ->actions([

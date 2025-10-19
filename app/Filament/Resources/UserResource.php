@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Filters\SelectFilter;
 use App\Filament\Resources\UserResource\Pages;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
@@ -39,27 +41,33 @@ class UserResource extends Resource
             ->schema([
                 TextInput::make('name')
                     ->required()
-                    ->label('Nama'),
+                    ->label('Nama')
+                    ->maxLength(255),
                 TextInput::make('email')
                     ->required()
                     ->label('Email')
-                    ->email(),
+                    ->email()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
                 TextInput::make('no_wa')
-                    // ->copyable()
                     ->required()
                     ->tel()
                     ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
                     ->label('Nomor WhatsApp')
-                    ->numeric(),
+                    ->numeric()
+                    ->maxLength(20),
                 Select::make('role')
                     ->required()
                     ->options([
                         'admin' => 'Admin',
                         'user' => 'User',
-                    ]),
+                    ])
+                    ->default('user')
+                    ->label('Role'),
                 TextInput::make('alamat')
                     ->required()
-                    ->label('Alamat'),
+                    ->label('Alamat')
+                    ->maxLength(255),
                 Select::make('is_active')
                     ->required()
                     ->default(1)
@@ -75,7 +83,7 @@ class UserResource extends Resource
                     ->dehydrated(fn($state) => filled($state))
                     ->required(fn(string $operation): bool => $operation === 'create')
                     ->maxLength(255)
-                // ->visible(fn($livewire) => $livewire instanceof \App\Filament\Resources\UserResource\Pages\CreateUser),
+                    ->revealable(),
             ]);
     }
 
@@ -90,7 +98,8 @@ class UserResource extends Resource
                     ->searchable(),
                 TextColumn::make('email')
                     ->label('Email')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable(),
                 TextColumn::make('no_wa')
                     ->label('No WhatsApp')
                     ->searchable()
@@ -100,13 +109,14 @@ class UserResource extends Resource
                     ->label('Role')
                     ->badge()
                     ->searchable()
+                    ->sortable()
                     ->placeholder('Belum ada data.')
                     ->color(fn(string $state): string => match ($state) {
                         'admin' => 'success',
                         'user' => 'info',
                     }),
                 TextColumn::make('is_active')
-                    ->label('Status Aktif')
+                    ->label('Status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         '1' => 'success',
@@ -115,10 +125,26 @@ class UserResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->formatStateUsing(fn(int $state): string => $state === 1 ? 'Aktif' : 'Tidak Aktif'),
-
+                TextColumn::make('created_at')
+                    ->label('Terdaftar')
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Tables\Filters\TrashedFilter::make(),
+                SelectFilter::make('is_active')
+                    ->label('Status Akun')
+                    ->options([
+                        '1' => 'Aktif',
+                        '0' => 'Tidak Aktif',
+                    ])
+                    ->default('1'),
+                SelectFilter::make('role')
+                    ->label('Role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'user' => 'User',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

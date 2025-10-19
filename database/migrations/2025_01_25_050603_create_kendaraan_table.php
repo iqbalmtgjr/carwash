@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('tipe');
             $table->string('merk');
             $table->string('plat');
-            $table->string('no_wa');
             $table->timestamps();
         });
     }
