@@ -16,6 +16,7 @@ class CreateTransaksi extends CreateRecord
     protected function afterCreate(): void
     {
         $cek_transaksi = Transaksi::find($this->record->id);
+        $get_harga = $cek_transaksi->layanan->harga;
         $get_pembagian = $cek_transaksi->layanan->bagi_karyawan;
         $transaksiuser = Transaksiuser::where('transaksi_id', $this->record->id)->get();
         $bagi_rata = $get_pembagian / $transaksiuser->count();
@@ -27,7 +28,7 @@ class CreateTransaksi extends CreateRecord
             ]);
         }
     }
-
+    
     protected function getRedirectUrl(): string
     {
         return route('filament.admin.resources.transaksi.index');

@@ -4,13 +4,11 @@ namespace App\Filament\Resources\PendapatansayaResource\Widgets;
 
 use App\Models\Bagipendapatan;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Filament\Widgets\Concerns\InteractsWithPageTable;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use App\Filament\Resources\BagipendapatanResource\Pages\ListBagipendapatans;
 
 class PendapatanUser extends BaseWidget
 {
-    use InteractsWithPageTable;
 
     public static function canView(): bool
     {

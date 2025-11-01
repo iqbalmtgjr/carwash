@@ -5,33 +5,35 @@ namespace App\Filament\Widgets;
 use App\Models\Transaksi;
 use App\Models\Pengeluaran;
 use App\Models\Bagipendapatan;
+use App\Models\Kasbon;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Carbon\Carbon;
 
 class StatsDashboard extends BaseWidget
 {
+    // Polling untuk auto refresh setiap 30 detik
+    protected static ?string $pollingInterval = '30s';
 
     protected function getStats(): array
     {
         $now = now();
         $start = $now->copy()->startOfWeek();
         $end = $now->copy()->endOfWeek();
-        // dd($start, $end);
 
-        $pengeluaran = Pengeluaran::where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
+        // Pengeluaran mingguan
+        $pengeluaran_mingguan = Pengeluaran::query()
+            ->whereBetween('created_at', [$start, $end])
             ->sum('jumlah');
-        // dd($pengeluaran);
 
+        // Bagi pendapatan mingguan
         $bagi_pendapatan = Bagipendapatan::query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
+            ->whereBetween('created_at', [$start, $end])
             ->get();
-        // dd($pemasukan_kotor);
 
         $total_gaji_karyawan = $bagi_pendapatan->sum('bagian_karyawan');
-        // dd($total_gaji_karyawan);
 
+        // Hitung pemasukan kotor
         $lihat_harga = $bagi_pendapatan->groupBy('transaksi_id')->map(function ($item) {
             return [
                 'transaksi_id' => $item->first()->transaksi_id,
@@ -40,73 +42,133 @@ class StatsDashboard extends BaseWidget
             ];
         });
 
-        $pemasukan_bersih = $lihat_harga->sum('harga') - $pengeluaran - $total_gaji_karyawan;
+        $pemasukan_kotor_mingguan = $lihat_harga->sum('harga');
+        $pemasukan_bersih = $pemasukan_kotor_mingguan - $pengeluaran_mingguan - $total_gaji_karyawan;
 
-        $total_pendapatan_karyawanperminggu = Bagipendapatan::query()
-            ->where('user_id', auth()->user()->id)
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
-            ->get()
-            ->sum('bagian_karyawan');
-
-        $get_layanan = Transaksi::count();
-
-        $total_pendapatan = Transaksi::get();
-        $pendapatan_per_hari = [];
-        foreach ($total_pendapatan as $pendapatan) {
-            $pendapatan_per_hari[] = $pendapatan->created_at->format('Y-m-d');
-        }
-        $pendapatan_per_hari = array_count_values($pendapatan_per_hari);
-        $pendapatan_per_hari = array_map(function ($value) {
-            return $value;
-        }, $pendapatan_per_hari);
-
+        // Data untuk user (karyawan)
         if (auth()->user()->role == 'user') {
-            // $total_pendapatan = Transaksi::where('user_id', auth()->user()->id)->get();
-            $total_pendapatan = Bagipendapatan::query()
+            // Kasbon karyawan (semua waktu)
+            $kasbonperkaryawan = Kasbon::where('user_id', auth()->user()->id)
+                ->whereBetween('created_at', [$start, $end])
+                ->sum('nominal');
+
+            // Gaji karyawan minggu ini
+            $gajiperorang = Bagipendapatan::query()
                 ->where('user_id', auth()->user()->id)
-                // ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
-                ->get();
-            // ->sum('bagian_karyawan');
-        }
+                ->whereBetween('created_at', [$start, $end])
+                ->sum('bagian_karyawan');
 
-        $total_pengeluaran = Pengeluaran::get();
-        $pengeluaran_per_hari = [];
-        foreach ($total_pengeluaran as $pengeluaran) {
-            $pengeluaran_per_hari[] = $pengeluaran->created_at->format('Y-m-d');
-        }
-        $pengeluaran_per_hari = array_count_values($pengeluaran_per_hari);
-        $pengeluaran_per_hari = array_map(function ($value) {
-            return $value;
-        }, $pengeluaran_per_hari);
+            // Kasbon minggu ini
+            $kasbon_minggu_ini = Kasbon::where('user_id', auth()->user()->id)
+                ->whereBetween('created_at', [$start, $end])
+                ->sum('nominal');
 
-        if (auth()->user()->role == 'user') {
+            $total_pendapatan_karyawanperminggu = $gajiperorang - $kasbon_minggu_ini;
+
+            // Total pendapatan selama bekerja
+            $total_pendapatan_seluruhnya = Bagipendapatan::query()
+                ->where('user_id', auth()->user()->id)
+                ->sum('bagian_karyawan');
+
+            // Chart data untuk pendapatan karyawan (7 hari terakhir)
+            $pendapatan_chart = $this->getChartData('user');
+
             return [
-                Stat::make('Pendapatan Saya Minggu Ini', 'Rp. ' . number_format($total_pendapatan_karyawanperminggu, 0, ',', '.')),
-                // Stat::make('Total Pengeluaran', 'Rp. ' . number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.'))
-                //     ->description(number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
-                //     ->descriptionIcon('heroicon-m-arrow-trending-up')
-                //     ->chart($pengeluaran_per_hari)
-                //     ->color('info'),
-                Stat::make('Total Pendapatan Saya Selama Bekerja', 'Rp. ' . number_format(collect($total_pendapatan)->sum('bagian_karyawan'), 0, ',', '.'))
-                    ->description(number_format(collect($total_pendapatan)->sum('bagian_karyawan') - collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
+                Stat::make('Pendapatan Minggu Ini', 'Rp. ' . number_format($total_pendapatan_karyawanperminggu, 0, ',', '.'))
+                    ->description('Setelah dikurangi kasbon minggu ini')
+                    ->descriptionIcon('heroicon-m-banknotes')
+                    ->color('success')
+                    ->chart($pendapatan_chart),
+                
+                Stat::make('Total Kasbon', 'Rp. ' . number_format($kasbonperkaryawan, 0, ',', '.'))
+                    ->description('Kasbon anda minggu ini')
+                    ->descriptionIcon('heroicon-m-credit-card')
+                    ->color('warning'),
+                
+                Stat::make('Total Pendapatan Selama Bekerja', 'Rp. ' . number_format($total_pendapatan_seluruhnya, 0, ',', '.'))
+                    ->description('Pendapatan kotor (sebelum kasbon)')
                     ->descriptionIcon('heroicon-m-arrow-trending-up')
-                    ->chart($pendapatan_per_hari),
+                    ->color('info')
+                    ->chart($pendapatan_chart),
             ];
         } else {
+            // Admin view
+            // Chart data (7 hari terakhir)
+            $pendapatan_chart = $this->getChartData('admin', 'pendapatan');
+            $pengeluaran_chart = $this->getChartData('admin', 'pengeluaran');
+
+            // Total pendapatan dan pengeluaran (all time)
+            $total_pendapatan_all = Transaksi::with('layanan')->get()->sum('layanan.harga');
+            $total_pengeluaran_all = Pengeluaran::sum('jumlah');
+
             return [
-                Stat::make('Pendapatan Bersih Minggu Ini', 'Rp. ' . number_format($pemasukan_bersih, 0, ',', '.')),
-                Stat::make('Total PenPendapatan Bersihgeluaran', 'Rp. ' . number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.'))
-                    ->description(number_format(collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
-                    ->descriptionIcon('heroicon-m-arrow-trending-up')
-                    ->chart($pengeluaran_per_hari)
+                Stat::make('Pendapatan Bersih Minggu Ini', 'Rp. ' . number_format($pemasukan_bersih, 0, ',', '.'))
+                    ->description('Pemasukan - Pengeluaran - Gaji Karyawan')
+                    ->descriptionIcon('heroicon-m-banknotes')
+                    ->color('success')
+                    ->chart($pendapatan_chart),
+                
+                Stat::make('Total Pengeluaran Minggu Ini', 'Rp. ' . number_format($pengeluaran_mingguan, 0, ',', '.'))
+                    ->description('Total pengeluaran operasional')
+                    ->descriptionIcon('heroicon-m-arrow-trending-down')
+                    ->color('danger')
+                    ->chart($pengeluaran_chart),
+                
+                Stat::make('Total Gaji Karyawan Minggu Ini', 'Rp. ' . number_format($total_gaji_karyawan, 0, ',', '.'))
+                    ->description('Total bagian karyawan')
+                    ->descriptionIcon('heroicon-m-users')
                     ->color('info'),
-                Stat::make('Total Pendapatan', 'Rp. ' . number_format(collect($total_pendapatan)->sum('layanan.harga'), 0, ',', '.'))
-                    ->description(number_format(collect($total_pendapatan)->sum('layanan.harga') - collect($total_pengeluaran)->sum('jumlah'), 0, ',', '.') . ' meningkat')
+                
+                Stat::make('Total Pendapatan (All Time)', 'Rp. ' . number_format($total_pendapatan_all, 0, ',', '.'))
+                    ->description('Selisih: Rp. ' . number_format($total_pendapatan_all - $total_pengeluaran_all, 0, ',', '.'))
                     ->descriptionIcon('heroicon-m-arrow-trending-up')
-                    ->chart($pendapatan_per_hari)
-                    ->color('success'),
+                    ->color('success')
+                    ->chart($pendapatan_chart),
             ];
         }
+    }
+
+    /**
+     * Generate chart data untuk 7 hari terakhir
+     */
+    private function getChartData(string $role, string $type = 'pendapatan'): array
+    {
+        $chartData = [];
+        
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $startOfDay = $date->copy()->startOfDay();
+            $endOfDay = $date->copy()->endOfDay();
+
+            if ($role == 'user') {
+                // Chart untuk karyawan (pendapatan per hari)
+                $value = Bagipendapatan::query()
+                    ->where('user_id', auth()->user()->id)
+                    ->whereBetween('created_at', [$startOfDay, $endOfDay])
+                    ->sum('bagian_karyawan');
+            } else {
+                if ($type == 'pendapatan') {
+                    // Chart pendapatan untuk admin
+                    $bagi_pendapatan = Bagipendapatan::query()
+                        ->whereBetween('created_at', [$startOfDay, $endOfDay])
+                        ->get();
+
+                    $lihat_harga = $bagi_pendapatan->groupBy('transaksi_id')->map(function ($item) {
+                        return $item->first()->transaksi->layanan->harga ?? 0;
+                    });
+
+                    $value = $lihat_harga->sum();
+                } else {
+                    // Chart pengeluaran untuk admin
+                    $value = Pengeluaran::query()
+                        ->whereBetween('created_at', [$startOfDay, $endOfDay])
+                        ->sum('jumlah');
+                }
+            }
+
+            $chartData[] = $value;
+        }
+
+        return $chartData;
     }
 }

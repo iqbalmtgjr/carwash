@@ -37,6 +37,10 @@ class AdminPanelProvider extends PanelProvider
                 'success' => Color::Emerald,
                 'warning' => Color::Orange,
             ])
+            ->favicon(asset('logo_white.png'))
+            ->brandName('Mensekak Carwash')
+            // ->brandLogo(asset('logo.png'))
+            ->brandLogoHeight('2rem')
             ->sidebarCollapsibleOnDesktop()
             ->font('Poppins')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

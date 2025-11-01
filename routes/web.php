@@ -13,8 +13,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-use Illuminate\Support\Facades\Artisan;
-
 Route::get('/optimize-clear', function () {
     Artisan::call('optimize:clear');
     return 'Optimization cache cleared!';
@@ -25,11 +23,6 @@ Route::get('/migrate', function () {
     return 'Migration completed!';
 });
 
-
 Route::get('/', function () {
     return redirect('admin');
-});
-
-Route::get('/tgl', function () {
-    return date('Y-m-d');
 });

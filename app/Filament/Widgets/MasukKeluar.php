@@ -10,6 +10,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageTable;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use App\Filament\Resources\BagipendapatanResource\Pages\ListBagipendapatans;
+use Carbon\Carbon;
 
 class MasukKeluar extends BaseWidget
 {
@@ -18,7 +19,7 @@ class MasukKeluar extends BaseWidget
 
     public static function canView(): bool
     {
-        if (auth()->user()->id == 1 || auth()->user()->id == 7) {
+        if (auth()->user()->id == 1) {
             return true;
         }
         return false;
@@ -32,25 +33,41 @@ class MasukKeluar extends BaseWidget
 
     protected function getStats(): array
     {
-        $now = now();
-        $start = $now->copy()->startOfWeek();
-        $end = $now->copy()->endOfWeek();
-        // dd($start, $end);
+        // Ambil query dari tabel dengan filter yang aktif
+        $query = $this->getPageTableQuery();
 
-        $pengeluaran = Pengeluaran::where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
-            ->sum('jumlah');
-        // dd($pengeluaran);
+        // Clone query untuk mendapatkan ID yang terfilter
+        $filteredIds = $query->pluck('id');
 
-        $bagi_pendapatan = Bagipendapatan::query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
-            ->get();
-        // dd($pemasukan_kotor);
+        // Jika tidak ada data yang terfilter, gunakan default (minggu ini)
+        if ($filteredIds->isEmpty()) {
+            $start = now()->startOfWeek();
+            $end = now()->endOfWeek();
 
-        $total_gaji_karyawan = $bagi_pendapatan->sum('bagian_karyawan');
-        // dd($total_gaji_karyawan);
+            $bagi_pendapatan = Bagipendapatan::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->get();
+        } else {
+            // Gunakan data yang sudah terfilter
+            $bagi_pendapatan = Bagipendapatan::query()
+                ->whereIn('id', $filteredIds)
+                ->get();
 
+            // Ambil rentang tanggal dari data yang terfilter
+            $start = $bagi_pendapatan->min('created_at');
+            $end = $bagi_pendapatan->max('created_at');
+
+            // Jika start dan end null, gunakan hari ini
+            if (!$start || !$end) {
+                $start = now()->startOfDay();
+                $end = now()->endOfDay();
+            } else {
+                $start = Carbon::parse($start)->startOfDay();
+                $end = Carbon::parse($end)->endOfDay();
+            }
+        }
+
+        // Hitung pemasukan kotor
         $lihat_harga = $bagi_pendapatan->groupBy('transaksi_id')->map(function ($item) {
             return [
                 'transaksi_id' => $item->first()->transaksi_id,
@@ -59,29 +76,28 @@ class MasukKeluar extends BaseWidget
             ];
         });
 
-        $pemasukan_bersih = $lihat_harga->sum('harga') - $pengeluaran - $total_gaji_karyawan;
-        // dd($pemasukan_bersih);
-
         $pemasukan_kotor = $lihat_harga->sum('harga');
 
-        $pendapatan_ee = $pemasukan_bersih * 0.5;
-        $pendapatan_ivan = $pemasukan_bersih * 0.5;
+        // Hitung pengeluaran berdasarkan rentang tanggal
+        $pengeluaran = Pengeluaran::whereBetween('created_at', [$start, $end])
+            ->sum('jumlah');
 
-        $kasbon = Kasbon::query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
-            ->sum('nominal');
-
-        $uang_ditangan = $pemasukan_bersih + $total_gaji_karyawan - $kasbon;
+        // Hitung selisih
+        $selisih = $pemasukan_kotor - $pengeluaran;
 
         return [
-            // Stat::make('Pemasukan Kotor', 'Rp. ' . number_format($pemasukan_kotor, 0, ',', '.'))->color('success'),
-            Stat::make('Pemasukan Bersih Owner', 'Rp. ' . number_format($pemasukan_bersih, 0, ',', '.'))->color('success'),
-            Stat::make('Pemasukan Setengah Owner', 'Rp. ' . number_format($pendapatan_ee, 0, ',', '.'))->color('success'),
-            // Stat::make('Pengeluaran', 'Rp. ' . number_format($pengeluaran, 0, ',', '.'))->color('success'),
-            Stat::make('Uang di Tangan', 'Rp. ' . number_format($uang_ditangan, 0, ',', '.'))->color('success'),
-            Stat::make('Total Gaji Karyawan', 'Rp. ' . number_format($total_gaji_karyawan, 0, ',', '.'))->color('success'),
-            // Stat::make('Pemasukan Owner (H)', 'Rp. ' . number_format($pendapatan_ivan, 0, ',', '.'))->color('success'),
+            Stat::make('Pemasukan Kotor', 'Rp. ' . number_format($pemasukan_kotor, 0, ',', '.'))
+                ->color('success')
+                ->description('Total pendapatan sebelum dikurangi')
+                ->descriptionIcon('heroicon-m-arrow-trending-up'),
+            Stat::make('Pengeluaran', 'Rp. ' . number_format($pengeluaran, 0, ',', '.'))
+                ->color('danger')
+                ->description('Total pengeluaran periode ini')
+                ->descriptionIcon('heroicon-m-arrow-trending-down'),
+            Stat::make('Selisih', 'Rp. ' . number_format($selisih, 0, ',', '.'))
+                ->color($selisih >= 0 ? 'success' : 'danger')
+                ->description($selisih >= 0 ? 'Surplus' : 'Defisit')
+                ->descriptionIcon($selisih >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down'),
         ];
     }
 }
