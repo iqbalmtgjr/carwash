@@ -35,15 +35,15 @@ class MasukKeluar extends BaseWidget
     {
         // Ambil query dari tabel dengan filter yang aktif
         $query = $this->getPageTableQuery();
-
+        
         // Clone query untuk mendapatkan ID yang terfilter
         $filteredIds = $query->pluck('id');
-
+        
         // Jika tidak ada data yang terfilter, gunakan default (minggu ini)
         if ($filteredIds->isEmpty()) {
             $start = now()->startOfWeek();
             $end = now()->endOfWeek();
-
+            
             $bagi_pendapatan = Bagipendapatan::query()
                 ->whereBetween('created_at', [$start, $end])
                 ->get();
@@ -52,11 +52,11 @@ class MasukKeluar extends BaseWidget
             $bagi_pendapatan = Bagipendapatan::query()
                 ->whereIn('id', $filteredIds)
                 ->get();
-
+            
             // Ambil rentang tanggal dari data yang terfilter
             $start = $bagi_pendapatan->min('created_at');
             $end = $bagi_pendapatan->max('created_at');
-
+            
             // Jika start dan end null, gunakan hari ini
             if (!$start || !$end) {
                 $start = now()->startOfDay();
