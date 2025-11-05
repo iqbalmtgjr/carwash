@@ -107,6 +107,9 @@ class TransaksiResource extends Resource
         return $table
             ->query(Transaksi::query()->orderBy('id', 'desc'))
             ->columns([
+                // TextColumn::make('id')
+                //     ->label('ID Transaksi')
+                //     ->sortable(),
                 TextColumn::make('kendaraan.merk')
                     ->label('Merk')
                     ->sortable()
@@ -155,10 +158,10 @@ class TransaksiResource extends Resource
                     }),
                 Filter::make('created_today')
                     ->label('Transaksi Hari ini')
+                    ->default()
                     ->query(fn(Builder $query) => $query->whereDate('created_at', now()->toDateString())),
                 Filter::make('created_this_week')
                     ->label('Transaksi Minggu ini')
-                    ->default()
                     ->query(fn(Builder $query) => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
