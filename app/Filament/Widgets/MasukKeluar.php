@@ -2,8 +2,6 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Kasbon;
-use App\Models\Transaksi;
 use App\Models\Pengeluaran;
 use App\Models\Bagipendapatan;
 use Filament\Widgets\StatsOverviewWidget\Stat;
