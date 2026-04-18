@@ -79,12 +79,12 @@ class StatsDashboard extends BaseWidget
                     ->descriptionIcon('heroicon-m-banknotes')
                     ->color('success')
                     ->chart($pendapatan_chart),
-                
+
                 Stat::make('Total Kasbon', 'Rp. ' . number_format($kasbonperkaryawan, 0, ',', '.'))
                     ->description('Kasbon anda minggu ini')
                     ->descriptionIcon('heroicon-m-credit-card')
                     ->color('warning'),
-                
+
                 Stat::make('Total Pendapatan Selama Bekerja', 'Rp. ' . number_format($total_pendapatan_seluruhnya, 0, ',', '.'))
                     ->description('Pendapatan kotor (sebelum kasbon)')
                     ->descriptionIcon('heroicon-m-arrow-trending-up')
@@ -107,20 +107,20 @@ class StatsDashboard extends BaseWidget
                     ->descriptionIcon('heroicon-m-banknotes')
                     ->color('success')
                     ->chart($pendapatan_chart),
-                
+
                 Stat::make('Total Pengeluaran Minggu Ini', 'Rp. ' . number_format($pengeluaran_mingguan, 0, ',', '.'))
                     ->description('Total pengeluaran operasional')
                     ->descriptionIcon('heroicon-m-arrow-trending-down')
                     ->color('danger')
                     ->chart($pengeluaran_chart),
-                
+
                 Stat::make('Total Gaji Karyawan Minggu Ini', 'Rp. ' . number_format($total_gaji_karyawan, 0, ',', '.'))
                     ->description('Total bagian karyawan')
                     ->descriptionIcon('heroicon-m-users')
                     ->color('info'),
-                
+
                 Stat::make('Total Pendapatan (All Time)', 'Rp. ' . number_format($total_pendapatan_all, 0, ',', '.'))
-                    ->description('Selisih: Rp. ' . number_format($total_pendapatan_all - $total_pengeluaran_all, 0, ',', '.'))
+                    ->description('Selisih: Rp. ' . number_format($total_pendapatan_all - $total_pengeluaran_all - $total_gaji_karyawan, 0, ',', '.'))
                     ->descriptionIcon('heroicon-m-arrow-trending-up')
                     ->color('success')
                     ->chart($pendapatan_chart),
@@ -134,7 +134,7 @@ class StatsDashboard extends BaseWidget
     private function getChartData(string $role, string $type = 'pendapatan'): array
     {
         $chartData = [];
-        
+
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $startOfDay = $date->copy()->startOfDay();

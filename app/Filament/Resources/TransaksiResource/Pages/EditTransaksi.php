@@ -41,6 +41,7 @@ class EditTransaksi extends EditRecord
                 'transaksi_id' => $this->record->id,
                 'user_id' => $bagi->user_id,
                 'bagian_karyawan' => $bagi_rata,
+                'created_at' => $cek_transaksi->created_at,
             ]);
         }
     }

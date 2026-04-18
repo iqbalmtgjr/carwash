@@ -17,6 +17,8 @@ class PembagianUpah extends BaseWidget
 
     protected static bool $isDiscovered = false;
 
+    protected static ?string $pollingInterval = null;
+
     protected function getTablePage(): string
     {
         return ListBagipendapatans::class;
@@ -24,32 +26,28 @@ class PembagianUpah extends BaseWidget
 
     protected function getStats(): array
     {
-        // Ambil query dari tabel dengan filter yang aktif
         $query = $this->getPageTableQuery();
-
-        // Clone query untuk mendapatkan ID yang terfilter
         $filteredIds = $query->pluck('id');
 
-        // Tentukan rentang tanggal berdasarkan filter
         if ($filteredIds->isEmpty()) {
-            // Default: minggu ini (Senin - Minggu)
             $start = now()->startOfWeek();
             $end = now()->endOfWeek();
 
+            // ✅ FIX KRITIS #2: Tambah eager loading
             $bagi_pendapatan = Bagipendapatan::query()
                 ->whereBetween('created_at', [$start, $end])
+                ->with(['transaksi.layanan', 'user'])
                 ->get();
         } else {
-            // Gunakan data yang sudah terfilter
+            // ✅ FIX KRITIS #2: Tambah eager loading
             $bagi_pendapatan = Bagipendapatan::query()
                 ->whereIn('id', $filteredIds)
+                ->with(['transaksi.layanan', 'user'])
                 ->get();
 
-            // Ambil rentang tanggal dari data yang terfilter
             $start = $bagi_pendapatan->min('created_at');
             $end = $bagi_pendapatan->max('created_at');
 
-            // Jika start dan end null, gunakan hari ini
             if (!$start || !$end) {
                 $start = now()->startOfDay();
                 $end = now()->endOfDay();
@@ -62,23 +60,15 @@ class PembagianUpah extends BaseWidget
         $stats = [];
 
         if (auth()->user()->role == 'user') {
-            // ============================================
-            // UNTUK USER/KARYAWAN - HANYA LIHAT SENDIRI
-            // ============================================
-
-            // Filter hanya data user yang login
             $bagi_pendapatan_user = $bagi_pendapatan->where('user_id', auth()->user()->id);
 
-            // Total pendapatan user
             $total_pendapatan = $bagi_pendapatan_user->sum('bagian_karyawan');
 
-            // Kasbon user berdasarkan rentang tanggal
             $kasbon = Kasbon::query()
                 ->where('user_id', auth()->user()->id)
                 ->whereBetween('created_at', [$start, $end])
                 ->sum('nominal');
 
-            // Total setelah dikurangi kasbon
             $total_bersih = $total_pendapatan - $kasbon;
 
             $stats[] = Stat::make('Pendapatan Saya', 'Rp. ' . number_format($total_pendapatan, 0, ',', '.'))
@@ -96,20 +86,11 @@ class PembagianUpah extends BaseWidget
                 ->description($total_bersih >= 0 ? 'Pendapatan - Kasbon' : 'Minus (Utang Kasbon)')
                 ->descriptionIcon($total_bersih >= 0 ? 'heroicon-m-check-circle' : 'heroicon-m-exclamation-circle');
         } else {
-            // ============================================
-            // UNTUK ADMIN - LIHAT SEMUA
-            // ============================================
-
-            // Hitung pengeluaran berdasarkan rentang tanggal
             $pengeluaran = Pengeluaran::whereBetween('created_at', [$start, $end])
                 ->sum('jumlah');
 
-            // Hitung total gaji karyawan
             $total_gaji_karyawan = $bagi_pendapatan->sum('bagian_karyawan');
-            // dd($total_gaji_karyawan);
 
-
-            // Hitung pemasukan kotor
             $lihat_harga = $bagi_pendapatan->groupBy('transaksi_id')->map(function ($item) {
                 return [
                     'transaksi_id' => $item->first()->transaksi_id,
@@ -122,31 +103,26 @@ class PembagianUpah extends BaseWidget
             $pemasukan_bersih = $pemasukan_kotor - $pengeluaran - $total_gaji_karyawan;
             $pendapatan_ee = $pemasukan_bersih * 0.5;
 
-            // Hitung kasbon berdasarkan rentang tanggal
             $kasbon = Kasbon::query()
                 ->whereBetween('created_at', [$start, $end])
                 ->sum('nominal');
 
             $uang_ditangan = $pemasukan_kotor - $pengeluaran - $kasbon;
 
-            // Stats untuk Admin
             if (auth()->user()->role == 'admin' && auth()->user()->id == 1) {
                 $stats[] = Stat::make('Pemasukan Bersih Owner', 'Rp. ' . number_format($pemasukan_bersih, 0, ',', '.'))
                     ->color('success')
                     ->description('Setelah dikurangi gaji & pengeluaran')
                     ->descriptionIcon('heroicon-m-banknotes');
 
-                $stats[] = Stat::make('Pemasukan Setengah Owner', 'Rp. ' . number_format($pendapatan_ee, 0, ',', '.'))
-                    ->color('success')
-                    ->description('50% dari pemasukan bersih')
-                    ->descriptionIcon('heroicon-m-calculator');
                 $stats[] = Stat::make('Uang di Tangan', 'Rp. ' . number_format($uang_ditangan, 0, ',', '.'))
                     ->color('info')
                     ->description('Pemasukan kotor - pengeluaran - kasbon')
                     ->descriptionIcon('heroicon-m-currency-dollar');
-                $stats[] = Stat::make('Total Gaji Karyawan', 'Rp. ' . number_format($total_gaji_karyawan, 0, ',', '.'))
+
+                $stats[] = Stat::make('Total Gaji Karyawan', 'Rp. ' . number_format($total_gaji_karyawan - $kasbon, 0, ',', '.'))
                     ->color('success')
-                    ->description('Total bagian karyawan')
+                    ->description('Total bagian karyawan: Rp. ' . number_format($total_gaji_karyawan, 0, ',', '.'))
                     ->descriptionIcon('heroicon-m-users');
             }
 
@@ -155,16 +131,21 @@ class PembagianUpah extends BaseWidget
                 ->description('Total kasbon periode ini')
                 ->descriptionIcon('heroicon-m-credit-card');
 
+            // ✅ FIX KRITIS #1: Ambil semua kasbon sekaligus, hindari N+1 query
+            $userIds = $bagi_pendapatan->pluck('user_id')->unique();
 
+            $all_kasbons = Kasbon::query()
+                ->whereIn('user_id', $userIds)
+                ->whereBetween('created_at', [$start, $end])
+                ->get()
+                ->groupBy('user_id')
+                ->map(fn($k) => $k->sum('nominal'));
 
-            // Tambahan: Breakdown per karyawan
             $breakdown_karyawan = $bagi_pendapatan
                 ->groupBy('user_id')
-                ->map(function ($group) use ($start, $end) {
-                    $kasbon = Kasbon::query()
-                        ->where('user_id', $group->first()->user_id)
-                        ->whereBetween('created_at', [$start, $end])
-                        ->sum('nominal');
+                ->map(function ($group) use ($all_kasbons) {
+                    $userId = $group->first()->user_id;
+                    $kasbon = $all_kasbons->get($userId, 0);
 
                     return [
                         'user' => $group->first()->user->name,
@@ -176,7 +157,6 @@ class PembagianUpah extends BaseWidget
                 ->sortByDesc('total')
                 ->values();
 
-            // Tambahkan stat untuk setiap karyawan
             foreach ($breakdown_karyawan as $pembagian) {
                 $color = 'success';
                 $description = 'Bagian: Rp. ' . number_format($pembagian['bagian_karyawan'], 0, ',', '.');
@@ -197,7 +177,6 @@ class PembagianUpah extends BaseWidget
             }
         }
 
-        // Jika tidak ada data, tampilkan pesan
         if (empty($stats)) {
             $stats[] = Stat::make('Tidak Ada Data', 'Rp. 0')
                 ->color('warning')

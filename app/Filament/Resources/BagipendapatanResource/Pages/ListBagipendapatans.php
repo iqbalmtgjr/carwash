@@ -25,7 +25,7 @@ class ListBagipendapatans extends ListRecords
     {
         return [
             PembagianUpah::class,
-            MasukKeluar::class,
+            // MasukKeluar::class,
         ];
     }
 }
