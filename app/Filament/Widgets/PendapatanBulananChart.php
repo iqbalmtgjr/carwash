@@ -44,7 +44,10 @@ class PendapatanBulananChart extends ChartWidget
                 $pengeluaran = Pengeluaran::whereBetween('created_at', [$start, $end])
                     ->sum('jumlah');
 
-                $total_pendapatan = $pendapatan_kotor - $pengeluaran;
+                $gaji_karyawan = Bagipendapatan::whereBetween('created_at', [$start, $end])
+                    ->sum('bagian_karyawan');
+
+                $total_pendapatan = $pendapatan_kotor - $pengeluaran - $gaji_karyawan;
             }
 
             $data[] = $total_pendapatan;
@@ -54,7 +57,7 @@ class PendapatanBulananChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Total Pendapatan',
+                    'label' => 'Pendapatan Bersih',
                     'data' => $data,
                     'backgroundColor' => 'rgba(54, 162, 235, 0.5)',
                     'borderColor' => 'rgb(54, 162, 235)',
