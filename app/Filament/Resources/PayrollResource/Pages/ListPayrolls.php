@@ -9,6 +9,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Response;
 
 class ListPayrolls extends ListRecords
 {
@@ -40,6 +41,35 @@ class ListPayrolls extends ListRecords
                         ->body(strip_tags($output))
                         ->success()
                         ->send();
+                }),
+
+            Action::make('export_csv')
+                ->label('Export CSV')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->action(function () {
+                    $records = \App\Models\Payroll::with('employee')
+                        ->orderBy('week_start', 'desc')
+                        ->get();
+
+                    $csv = "Karyawan,Periode,Bagi Hasil,Gaji Pokok,Potongan,Bonus,Total\n";
+                    foreach ($records as $r) {
+                        $csv .= implode(',', [
+                            '"' . $r->employee->name . '"',
+                            $r->week_start->format('d/m/Y') . ' - ' . $r->week_end->format('d/m/Y'),
+                            $r->total_share,
+                            $r->base_salary,
+                            $r->attendance_deduction,
+                            $r->bonus,
+                            $r->total,
+                        ]) . "\n";
+                    }
+
+                    return Response::streamDownload(
+                        fn() => print($csv),
+                        'payroll-' . now()->format('Y-m-d') . '.csv',
+                        ['Content-Type' => 'text/csv']
+                    );
                 }),
 
             Actions\CreateAction::make()

@@ -32,6 +32,11 @@ class PendapatansayaResource extends Resource
         return false;
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'user';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -43,7 +48,7 @@ class PendapatansayaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-           // ->defaultPaginationPageOption('all')
+            // ->defaultPaginationPageOption('all')
             ->query(Bagipendapatan::query()->orderBy('created_at', 'desc'))
             ->columns([
                 TextColumn::make('user.name')

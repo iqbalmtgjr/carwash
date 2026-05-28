@@ -28,6 +28,11 @@ class AbsensisayaResource extends Resource
         return auth()->user()?->role === 'user';
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'user';
+    }
+
     // Query hanya record milik user yang login
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
@@ -52,7 +57,8 @@ class AbsensisayaResource extends Resource
                     ->label('Jam Masuk')
                     ->default('-'),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
                     ->label('Status')
                     ->colors([
                         'success' => 'hadir',

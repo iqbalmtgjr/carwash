@@ -28,6 +28,11 @@ class GajisayaResource extends Resource
         return auth()->user()?->role === 'user';
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'user';
+    }
+
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()->where('employee_id', auth()->id());

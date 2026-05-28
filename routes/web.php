@@ -28,6 +28,10 @@ Route::get('/', function () {
     return redirect('admin');
 });
 
+// Rating pelanggan
+Route::get('/rating/{transaksi}', [App\Http\Controllers\RatingController::class, 'show'])->name('rating.show');
+Route::post('/rating/{transaksi}', [App\Http\Controllers\RatingController::class, 'store'])->name('rating.store');
+
 // Absensi — display QR (untuk layar di pintu masuk)
 Route::get('/absensi', [App\Http\Controllers\AttendanceController::class, 'display'])->name('absensi.display');
 

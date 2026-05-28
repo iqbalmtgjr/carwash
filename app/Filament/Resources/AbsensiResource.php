@@ -30,6 +30,11 @@ class AbsensiResource extends Resource
         return auth()->user()?->role === 'admin';
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -86,7 +91,8 @@ class AbsensiResource extends Resource
                     ->label('Jam Masuk')
                     ->default('-'),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
                     ->label('Status')
                     ->colors([
                         'success' => 'hadir',

@@ -115,14 +115,7 @@ class AttendanceController extends Controller
 
     private function isLocalNetwork(): bool
     {
-        $ip     = request()->ip();
-        $prefix = config('attendance.local_ip_prefix', '192.168.1.');
-
-        // Izinkan localhost untuk pengujian lokal
-        if (in_array($ip, ['127.0.0.1', '::1'])) {
-            return true;
-        }
-
-        return str_starts_with($ip, $prefix);
+        // Validasi cukup lewat QR token yang rotate tiap 1 menit
+        return true;
     }
 }

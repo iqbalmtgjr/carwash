@@ -35,6 +35,11 @@ class TransaksiResource extends Resource
         return false;
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -129,6 +134,15 @@ class TransaksiResource extends Resource
                     ->label('Plat')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('rating.score')
+                    ->label('Rating')
+                    ->formatStateUsing(fn($state) => $state ? str_repeat('★', $state) . str_repeat('☆', 5 - $state) : '-')
+                    ->color(fn($state) => match (true) {
+                        $state == 5 => 'success',
+                        $state >= 3 => 'warning',
+                        $state > 0  => 'danger',
+                        default     => null,
+                    }),
                 TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->date('d/m/Y')
@@ -163,6 +177,21 @@ class TransaksiResource extends Resource
                     ->query(fn(Builder $query) => $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
+                Tables\Actions\Action::make('kirim_rating')
+                    ->label('Kirim Rating')
+                    ->icon('heroicon-o-star')
+                    ->color('warning')
+                    ->url(function ($record) {
+                        $noWa = $record->kendaraan?->no_wa;
+                        if (! $noWa) {
+                            return null;
+                        }
+                        $ratingUrl = url('/rating/' . $record->id);
+                        $pesan = urlencode("Halo! Terima kasih sudah mempercayakan kendaraan Anda ke Mensekak Carwash 🚗✨\n\nMohon berikan rating layanan kami di:\n{$ratingUrl}\n\nTerima kasih 🙏");
+                        return "https://wa.me/{$noWa}?text={$pesan}";
+                    })
+                    ->openUrlInNewTab()
+                    ->visible(fn($record) => $record->kendaraan?->no_wa && ! $record->rating),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

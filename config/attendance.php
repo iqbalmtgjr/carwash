@@ -17,4 +17,9 @@ return [
      * Batas telat — lebih dari ini dihitung terlambat
      */
     'late_threshold' => '08:30:00',
+
+    /*
+     * Bonus per rating bintang 5 (rupiah)
+     */
+    'rating_bonus_amount' => env('RATING_BONUS_AMOUNT', 2000),
 ];

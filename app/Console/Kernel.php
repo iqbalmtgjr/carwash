@@ -21,6 +21,9 @@ class Kernel extends ConsoleKernel
 
         // Generate payroll otomatis setiap Minggu jam 17:30
         $schedule->command('payroll:generate')->weeklyOn(Carbon::SUNDAY, '17:30');
+
+        // Cek absensi setiap hari jam 08:15, notifikasi owner jika kosong
+        $schedule->command('notifikasi:owner')->dailyAt('08:15');
     }
 
     /**

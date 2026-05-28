@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Attendance;
 use App\Models\Bagipendapatan;
 use App\Models\Payroll;
+use App\Models\Rating;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -74,8 +75,15 @@ class GeneratePayroll extends Command
                 ? (int) round(($daysAbsent / $workingDays) * $baseSalary)
                 : 0;
 
-            // 4. Bonus (belum ada sistem rating, default 0)
-            $bonus = 0;
+            // 4. Bonus dari rating bintang 5
+            $bonusPerRating = config('attendance.rating_bonus_amount', 2000);
+            $ratingCount = Rating::whereHas('transaksi.transaksiuser', function ($q) use ($employee) {
+                $q->where('user_id', $employee->id);
+            })
+                ->whereBetween('created_at', [$weekStart->startOfDay(), $weekEnd->copy()->endOfDay()])
+                ->where('score', 5)
+                ->count();
+            $bonus = $ratingCount * $bonusPerRating;
 
             // 5. Total
             $total = $totalShare + $baseSalary - $attendanceDeduction + $bonus;
