@@ -11,4 +11,9 @@ class Kendaraan extends Model
 
     protected $guarded = ['id'];
     protected $table = 'kendaraan';
+
+    public function transaksi()
+    {
+        return $this->hasMany(Transaksi::class);
+    }
 }

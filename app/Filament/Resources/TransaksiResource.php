@@ -5,11 +5,11 @@ namespace App\Filament\Resources;
 use Filament\Tables;
 use Filament\Forms\Form;
 use App\Models\Transaksi;
+use App\Models\Kendaraan;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
@@ -76,44 +76,45 @@ class TransaksiResource extends Resource
                     ->required()
                     ->default(now())
                     ->label('Tanggal'),
-                Repeater::make('kendaraan')
-                    ->relationship()
-                    ->schema([
+                Select::make('kendaraan_id')
+                    ->label('Kendaraan')
+                    ->searchable()
+                    ->getSearchResultsUsing(function (string $search) {
+                        return Kendaraan::where('plat', 'like', "%{$search}%")
+                            ->orWhere('merk', 'like', "%{$search}%")
+                            ->limit(10)
+                            ->get()
+                            ->mapWithKeys(fn($k) => [
+                                $k->id => ($k->plat ? strtoupper($k->plat) : '-') . ' — ' . $k->merk . ' (' . $k->tipe . ')',
+                            ])
+                            ->toArray();
+                    })
+                    ->getOptionLabelUsing(fn($value) => optional(
+                        Kendaraan::find($value),
+                        fn($k) => ($k->plat ? strtoupper($k->plat) : '-') . ' — ' . $k->merk . ' (' . $k->tipe . ')'
+                    ))
+                    ->createOptionForm([
                         TextInput::make('plat')
-                            ->required()
-                            ->placeholder('Contoh: KB 000 ER')
                             ->label('Plat')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, $set) {
-                                if (!$state) return;
-                                $kendaraan = \App\Models\Kendaraan::where('plat', strtoupper(trim($state)))
-                                    ->latest()
-                                    ->first();
-                                if ($kendaraan) {
-                                    $set('tipe', $kendaraan->tipe);
-                                    $set('merk', $kendaraan->merk);
-                                    $set('no_wa', $kendaraan->no_wa);
-                                }
-                            })
-                            ->dehydrateStateUsing(fn($state) => strtoupper(trim($state))),
+                            ->placeholder('Kosongkan jika tidak ada plat')
+                            ->dehydrateStateUsing(fn($state) => $state ? strtoupper(trim($state)) : null),
                         Select::make('tipe')
                             ->required()
                             ->label('Tipe')
-                            ->options([
-                                'mobil' => 'Mobil',
-                                'motor' => 'Motor',
-                            ]),
+                            ->options(['mobil' => 'Mobil', 'motor' => 'Motor']),
                         TextInput::make('merk')
                             ->required()
-                            ->placeholder('Contoh: Agya')
-                            ->label('Merk'),
+                            ->label('Merk')
+                            ->placeholder('Contoh: Agya'),
                         TextInput::make('no_wa')
                             ->tel()
                             ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')
                             ->numeric()
-                            ->placeholder('Contoh: 081122334455')
-                            ->label('No Whatsapp'),
+                            ->label('No Whatsapp')
+                            ->placeholder('Contoh: 081122334455'),
                     ])
+                    ->createOptionUsing(fn(array $data) => Kendaraan::create($data)->id)
+                    ->required()
                     ->columnSpan(2),
             ]);
     }

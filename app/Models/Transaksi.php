@@ -23,7 +23,7 @@ class Transaksi extends Model
 
     public function kendaraan()
     {
-        return $this->hasOne(Kendaraan::class);
+        return $this->belongsTo(Kendaraan::class);
     }
 
     public function bagipendapatan()
