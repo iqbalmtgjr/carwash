@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,7 +13,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Rotate QR token absensi setiap 1 menit
+        $schedule->command('qr:generate')->everyMinute();
+
+        // Tutup absensi setiap hari jam 17:00, tandai yang tidak hadir
+        $schedule->command('attendance:close')->dailyAt('17:00');
+
+        // Generate payroll otomatis setiap Minggu jam 17:30
+        $schedule->command('payroll:generate')->weeklyOn(Carbon::SUNDAY, '17:30');
     }
 
     /**
@@ -20,7 +28,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,3 +27,10 @@ Route::get('/migrate', function () {
 Route::get('/', function () {
     return redirect('admin');
 });
+
+// Absensi — display QR (untuk layar di pintu masuk)
+Route::get('/absensi', [App\Http\Controllers\AttendanceController::class, 'display'])->name('absensi.display');
+
+// Absensi — karyawan scan QR lalu buka URL ini
+Route::get('/absensi/scan/{token}', [App\Http\Controllers\AttendanceController::class, 'showScan'])->name('absensi.scan');
+Route::post('/absensi/scan/{token}', [App\Http\Controllers\AttendanceController::class, 'submitScan'])->name('absensi.submit');

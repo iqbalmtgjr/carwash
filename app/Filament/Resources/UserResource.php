@@ -64,6 +64,12 @@ class UserResource extends Resource
                     ])
                     ->default('user')
                     ->label('Role'),
+                TextInput::make('base_salary')
+                    ->label('Gaji Pokok Mingguan (Rp)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->default(0)
+                    ->helperText('Jaminan minimum per minggu, misal: 150000'),
                 TextInput::make('alamat')
                     ->required()
                     ->label('Alamat')
@@ -125,6 +131,11 @@ class UserResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->formatStateUsing(fn(int $state): string => $state === 1 ? 'Aktif' : 'Tidak Aktif'),
+                TextColumn::make('base_salary')
+                    ->label('Gaji Pokok')
+                    ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Terdaftar')
                     ->date('d/m/Y')

@@ -26,6 +26,7 @@ class User extends Authenticatable implements FilamentUser
         'no_wa',
         'alamat',
         'role',
+        'base_salary',
         'is_active',
         'password',
     ];
@@ -53,6 +54,16 @@ class User extends Authenticatable implements FilamentUser
     public function Transaksi()
     {
         return $this->hasMany(Transaksi::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'employee_id');
+    }
+
+    public function payrolls()
+    {
+        return $this->hasMany(Payroll::class, 'employee_id');
     }
 
     public function canAccessPanel(Panel $panel): bool
