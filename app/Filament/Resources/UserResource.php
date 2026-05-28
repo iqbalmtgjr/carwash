@@ -28,7 +28,7 @@ class UserResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (auth()->user()->role == 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
             return true;
         }
 
@@ -37,7 +37,7 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'admin';
+        return in_array(auth()->user()?->role, ['admin', 'owner']);
     }
 
     public static function form(Form $form): Form
@@ -64,8 +64,9 @@ class UserResource extends Resource
                 Select::make('role')
                     ->required()
                     ->options([
+                        'owner' => 'Owner',
                         'admin' => 'Admin',
-                        'user' => 'User',
+                        'user'  => 'User',
                     ])
                     ->default('user')
                     ->label('Role'),
@@ -123,8 +124,10 @@ class UserResource extends Resource
                     ->sortable()
                     ->placeholder('Belum ada data.')
                     ->color(fn(string $state): string => match ($state) {
+                        'owner' => 'danger',
                         'admin' => 'success',
-                        'user' => 'info',
+                        'user'  => 'info',
+                        default => 'gray',
                     }),
                 TextColumn::make('is_active')
                     ->label('Status')

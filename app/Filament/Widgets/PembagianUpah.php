@@ -54,6 +54,13 @@ class PembagianUpah extends BaseWidget
             } else {
                 $start = Carbon::parse($start)->startOfDay();
                 $end = Carbon::parse($end)->endOfDay();
+
+                // Jika $end masih dalam minggu yang sama dengan sekarang,
+                // perluas sampai hari ini agar kasbon hari ini tetap terhitung
+                // meskipun belum ada transaksi hari ini
+                if ($end->lessThan(now()->startOfDay()) && $end->weekOfYear == now()->weekOfYear && $end->year == now()->year) {
+                    $end = now()->endOfDay();
+                }
             }
         }
 
@@ -109,7 +116,7 @@ class PembagianUpah extends BaseWidget
 
             $uang_ditangan = $pemasukan_kotor - $pengeluaran - $kasbon;
 
-            if (auth()->user()->role == 'admin' && auth()->user()->id == 1) {
+            if (in_array(auth()->user()->role, ['admin', 'owner']) && auth()->user()->id == 1) {
                 $stats[] = Stat::make('Pemasukan Bersih Owner', 'Rp. ' . number_format($pemasukan_bersih, 0, ',', '.'))
                     ->color('success')
                     ->description('Setelah dikurangi gaji & pengeluaran')

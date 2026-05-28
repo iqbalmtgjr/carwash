@@ -17,7 +17,7 @@ class Totaltransaksi extends BaseWidget
 
     public static function canView(): bool
     {
-        if (auth()->user()->role == 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
             return true;
         }
         return false;
@@ -33,7 +33,7 @@ class Totaltransaksi extends BaseWidget
         $now = now();
         $start = $now->copy()->startOfDay();
         $end = $now->copy()->endOfDay();
-        
+
         $total_transaksi_hariini = Transaksi::query()
             ->whereBetween('created_at', [$start, $end])
             // ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))

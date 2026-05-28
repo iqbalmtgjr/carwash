@@ -16,6 +16,7 @@ class Payroll extends Model
         'total_share',
         'base_salary',
         'attendance_deduction',
+        'kasbon_deduction',
         'bonus',
         'total',
         'catatan',

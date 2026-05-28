@@ -16,7 +16,7 @@ class Totalpengeluaran extends BaseWidget
 
     public static function canView(): bool
     {
-        if (auth()->user()->role == 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
             return true;
         }
         return false;
@@ -36,7 +36,7 @@ class Totalpengeluaran extends BaseWidget
         $pengeluaran_hariini = Pengeluaran::query()
             ->whereBetween('created_at', [$start, $end])
             ->sum('jumlah');
-            
+
         $pengeluaran = Pengeluaran::query()
             // ->whereIn('id', collect($this->getPageTableRecords()->items())->pluck('id'))
             ->whereBetween('created_at', [$this->getPageTableRecords()->min('created_at'), $this->getPageTableRecords()->max('created_at')])

@@ -30,7 +30,7 @@ class KasbonResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (auth()->user()->role == 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
             return true;
         }
 
@@ -39,7 +39,7 @@ class KasbonResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'admin';
+        return in_array(auth()->user()?->role, ['admin', 'owner']);
     }
 
     public static function form(Form $form): Form

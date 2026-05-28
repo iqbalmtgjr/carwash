@@ -44,8 +44,7 @@ class AttendanceController extends Controller
             ]);
         }
 
-        $employees = User::where('role', 'user')
-            ->where('is_active', true)
+        $employees = User::where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name']);
 

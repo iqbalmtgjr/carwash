@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Attendance;
 use App\Models\Bagipendapatan;
+use App\Models\Kasbon;
 use App\Models\Payroll;
 use App\Models\Rating;
 use App\Models\User;
@@ -33,8 +34,7 @@ class GeneratePayroll extends Command
 
         $this->info("Generate payroll untuk periode: {$weekStart->format('d/m/Y')} — {$weekEnd->format('d/m/Y')}");
 
-        $employees = User::where('role', 'user')
-            ->where('is_active', true)
+        $employees = User::where('is_active', true)
             ->get();
 
         if ($employees->isEmpty()) {
@@ -75,7 +75,12 @@ class GeneratePayroll extends Command
                 ? (int) round(($daysAbsent / $workingDays) * $baseSalary)
                 : 0;
 
-            // 4. Bonus dari rating bintang 5
+            // 4. Potongan kasbon di periode ini
+            $kasbonDeduction = (int) Kasbon::where('user_id', $employee->id)
+                ->whereBetween('created_at', [$weekStart->startOfDay(), $weekEnd->copy()->endOfDay()])
+                ->sum('nominal');
+
+            // 6. Bonus dari rating bintang 5
             $bonusPerRating = config('attendance.rating_bonus_amount', 2000);
             $ratingCount = Rating::whereHas('transaksi.transaksiuser', function ($q) use ($employee) {
                 $q->where('user_id', $employee->id);
@@ -85,8 +90,8 @@ class GeneratePayroll extends Command
                 ->count();
             $bonus = $ratingCount * $bonusPerRating;
 
-            // 5. Total
-            $total = $totalShare + $baseSalary - $attendanceDeduction + $bonus;
+            // 7. Total
+            $total = $totalShare + $baseSalary - $attendanceDeduction - $kasbonDeduction + $bonus;
 
             Payroll::updateOrCreate(
                 ['employee_id' => $employee->id, 'week_start' => $weekStart->toDateString()],
@@ -95,6 +100,7 @@ class GeneratePayroll extends Command
                     'total_share'          => $totalShare,
                     'base_salary'          => $baseSalary,
                     'attendance_deduction' => $attendanceDeduction,
+                    'kasbon_deduction'     => $kasbonDeduction,
                     'bonus'                => $bonus,
                     'total'                => $total,
                 ]
@@ -102,7 +108,9 @@ class GeneratePayroll extends Command
 
             $this->line("  ✓ {$employee->name}: bagi hasil Rp " . number_format($totalShare) .
                 " + pokok Rp " . number_format($baseSalary) .
-                " - potongan Rp " . number_format($attendanceDeduction) .
+                " - absensi Rp " . number_format($attendanceDeduction) .
+                " - kasbon Rp " . number_format($kasbonDeduction) .
+                " + bonus Rp " . number_format($bonus) .
                 " = Rp " . number_format($total));
 
             $generated++;

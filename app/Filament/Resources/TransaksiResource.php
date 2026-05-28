@@ -28,7 +28,7 @@ class TransaksiResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (auth()->user()->role == 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
             return true;
         }
 
@@ -37,7 +37,7 @@ class TransaksiResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'admin';
+        return in_array(auth()->user()?->role, ['admin', 'owner']);
     }
 
     public static function form(Form $form): Form
@@ -79,6 +79,23 @@ class TransaksiResource extends Resource
                 Repeater::make('kendaraan')
                     ->relationship()
                     ->schema([
+                        TextInput::make('plat')
+                            ->required()
+                            ->placeholder('Contoh: KB 000 ER')
+                            ->label('Plat')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, $set) {
+                                if (!$state) return;
+                                $kendaraan = \App\Models\Kendaraan::where('plat', strtoupper(trim($state)))
+                                    ->latest()
+                                    ->first();
+                                if ($kendaraan) {
+                                    $set('tipe', $kendaraan->tipe);
+                                    $set('merk', $kendaraan->merk);
+                                    $set('no_wa', $kendaraan->no_wa);
+                                }
+                            })
+                            ->dehydrateStateUsing(fn($state) => strtoupper(trim($state))),
                         Select::make('tipe')
                             ->required()
                             ->label('Tipe')
@@ -90,10 +107,6 @@ class TransaksiResource extends Resource
                             ->required()
                             ->placeholder('Contoh: Agya')
                             ->label('Merk'),
-                        TextInput::make('plat')
-                            ->required()
-                            ->placeholder('Contoh: KB 000 ER')
-                            ->label('Plat'),
                         TextInput::make('no_wa')
                             ->tel()
                             ->telRegex('/^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\.\/0-9]*$/')

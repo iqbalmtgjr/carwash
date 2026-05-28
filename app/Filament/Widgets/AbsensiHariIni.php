@@ -18,7 +18,7 @@ class AbsensiHariIni extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->role === 'admin';
+        return in_array(auth()->user()?->role, ['admin', 'owner']);
     }
 
     public function table(Table $table): Table

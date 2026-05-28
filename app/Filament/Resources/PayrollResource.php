@@ -27,12 +27,12 @@ class PayrollResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->role === 'admin';
+        return in_array(auth()->user()?->role, ['admin', 'owner']);
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'admin';
+        return in_array(auth()->user()?->role, ['admin', 'owner']);
     }
 
     public static function form(Form $form): Form
@@ -40,7 +40,7 @@ class PayrollResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('employee_id')
                 ->label('Karyawan')
-                ->options(User::where('role', 'user')->where('is_active', true)->pluck('name', 'id'))
+                ->options(User::where('is_active', true)->pluck('name', 'id'))
                 ->searchable()
                 ->required(),
 
@@ -68,6 +68,12 @@ class PayrollResource extends Resource
 
             Forms\Components\TextInput::make('attendance_deduction')
                 ->label('Potongan Absensi')
+                ->numeric()
+                ->prefix('Rp')
+                ->default(0),
+
+            Forms\Components\TextInput::make('kasbon_deduction')
+                ->label('Potongan Kasbon')
                 ->numeric()
                 ->prefix('Rp')
                 ->default(0),
@@ -118,7 +124,12 @@ class PayrollResource extends Resource
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.')),
 
                 Tables\Columns\TextColumn::make('attendance_deduction')
-                    ->label('Potongan')
+                    ->label('Pot. Absensi')
+                    ->formatStateUsing(fn($state) => $state > 0 ? '- Rp ' . number_format($state, 0, ',', '.') : '-')
+                    ->color(fn($state) => $state > 0 ? 'danger' : null),
+
+                Tables\Columns\TextColumn::make('kasbon_deduction')
+                    ->label('Pot. Kasbon')
                     ->formatStateUsing(fn($state) => $state > 0 ? '- Rp ' . number_format($state, 0, ',', '.') : '-')
                     ->color(fn($state) => $state > 0 ? 'danger' : null),
 
@@ -146,7 +157,7 @@ class PayrollResource extends Resource
 
                 Tables\Filters\SelectFilter::make('employee_id')
                     ->label('Karyawan')
-                    ->options(User::where('role', 'user')->pluck('name', 'id')),
+                    ->options(User::where('is_active', true)->pluck('name', 'id')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

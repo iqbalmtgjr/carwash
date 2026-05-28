@@ -49,8 +49,19 @@
     </div>
 
     {{-- Tabel Rincian --}}
+    <style>
+        .dark .laporan-table { background-color: rgb(31 41 55); }
+        .dark .laporan-table thead { background-color: rgb(55 65 81); }
+        .dark .laporan-table thead th { color: rgb(209 213 219); }
+        .dark .laporan-table tbody tr { border-color: rgb(55 65 81); }
+        .dark .laporan-table tbody tr td { color: rgb(209 213 219); }
+        .dark .laporan-table .row-subtotal { background-color: rgb(55 65 81); }
+        .dark .laporan-table .row-subtotal td { color: rgb(243 244 246); }
+        .dark .laporan-table .row-total { background-color: rgb(20 83 45 / 0.3); }
+        .dark .laporan-table .row-total td.label { color: rgb(243 244 246); }
+    </style>
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
-        <table class="w-full text-sm">
+        <table class="laporan-table w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
                     <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-300 font-semibold">Komponen</th>
@@ -60,27 +71,27 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 <tr>
                     <td class="px-4 py-3 text-gray-700 dark:text-gray-300">Total Pendapatan Kotor</td>
-                    <td class="px-4 py-3 text-right font-medium text-blue-600">+ Rp
+                    <td class="px-4 py-3 text-right font-medium text-blue-600 dark:text-blue-400">+ Rp
                         {{ number_format($d['totalPendapatan'], 0, ',', '.') }}</td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-700 dark:text-gray-300">Bagi Hasil Karyawan</td>
-                    <td class="px-4 py-3 text-right text-orange-500">− Rp
+                    <td class="px-4 py-3 text-right text-orange-500 dark:text-orange-400">− Rp
                         {{ number_format($d['totalBagiKaryawan'], 0, ',', '.') }}</td>
                 </tr>
-                <tr class="bg-gray-50 dark:bg-gray-700/50 font-semibold">
-                    <td class="px-4 py-3 text-gray-800 dark:text-gray-200">Bagian Owner (sebelum pengeluaran)</td>
-                    <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">Rp
+                <tr class="row-subtotal bg-gray-50 font-semibold">
+                    <td class="px-4 py-3 text-gray-800 dark:text-gray-100">Bagian Owner (sebelum pengeluaran)</td>
+                    <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-100">Rp
                         {{ number_format($d['bagianOwner'], 0, ',', '.') }}</td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-700 dark:text-gray-300">Pengeluaran Operasional</td>
-                    <td class="px-4 py-3 text-right text-red-500">− Rp
+                    <td class="px-4 py-3 text-right text-red-500 dark:text-red-400">− Rp
                         {{ number_format($d['totalPengeluaran'], 0, ',', '.') }}</td>
                 </tr>
-                <tr class="bg-green-50 dark:bg-green-900/20 font-bold text-base">
-                    <td class="px-4 py-3 text-gray-800 dark:text-gray-200">Laba Bersih Owner</td>
-                    <td class="px-4 py-3 text-right {{ $d['labaOwner'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                <tr class="row-total bg-green-50 font-bold text-base">
+                    <td class="label px-4 py-3 text-gray-800 dark:text-gray-100">Laba Bersih Owner</td>
+                    <td class="px-4 py-3 text-right {{ $d['labaOwner'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                         Rp {{ number_format($d['labaOwner'], 0, ',', '.') }}
                     </td>
                 </tr>

@@ -64,7 +64,12 @@ class GajisayaResource extends Resource
                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.')),
 
                 Tables\Columns\TextColumn::make('attendance_deduction')
-                    ->label('Potongan')
+                    ->label('Pot. Absensi')
+                    ->formatStateUsing(fn($state) => $state > 0 ? '- Rp ' . number_format($state, 0, ',', '.') : '-')
+                    ->color(fn($state) => $state > 0 ? 'danger' : null),
+
+                Tables\Columns\TextColumn::make('kasbon_deduction')
+                    ->label('Pot. Kasbon')
                     ->formatStateUsing(fn($state) => $state > 0 ? '- Rp ' . number_format($state, 0, ',', '.') : '-')
                     ->color(fn($state) => $state > 0 ? 'danger' : null),
 

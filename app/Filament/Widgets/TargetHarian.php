@@ -19,7 +19,7 @@ class TargetHarian extends BaseWidget
      */
     public static function canView(): bool
     {
-        return auth()->user()->role === 'admin';
+        return in_array(auth()->user()->role, ['admin', 'owner']);
     }
 
     protected function getStats(): array

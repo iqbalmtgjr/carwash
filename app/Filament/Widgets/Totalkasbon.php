@@ -17,7 +17,7 @@ class Totalkasbon extends BaseWidget
 
     public static function canView(): bool
     {
-        if (auth()->user()->role == 'admin') {
+        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
             return true;
         }
         return false;
@@ -32,16 +32,16 @@ class Totalkasbon extends BaseWidget
     {
         // Ambil query dari tabel dengan filter yang aktif
         $query = $this->getPageTableQuery();
-        
+
         // Ambil semua data yang terfilter (BUKAN hanya ID)
         $kasbonData = $query->with('user')->get();
-        
+
         // Jika data kosong (tidak ada filter atau filter tidak menghasilkan data)
         if ($kasbonData->isEmpty()) {
             // Fallback ke minggu ini
             $start = now()->startOfWeek();
             $end = now()->endOfWeek();
-            
+
             $kasbonData = Kasbon::query()
                 ->whereBetween('created_at', [$start, $end])
                 ->with('user')
@@ -77,7 +77,7 @@ class Totalkasbon extends BaseWidget
         // Tambahkan stat untuk setiap karyawan
         foreach ($kasbon_per_karyawan as $kasbon) {
             $description = $kasbon['jumlah_kasbon'] . ' kali kasbon';
-            
+
             $stats[] = Stat::make($kasbon['user'], 'Rp. ' . number_format($kasbon['total'], 0, ',', '.'))
                 ->color('warning')
                 ->description($description)
