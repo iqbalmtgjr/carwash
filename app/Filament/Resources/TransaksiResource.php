@@ -62,7 +62,7 @@ class TransaksiResource extends Resource
                 Select::make('layanan_id')
                     ->relationship('layanan', 'nama_layanan')
                     ->options(function () {
-                        return \App\Models\Layanan::all()->pluck('formatted_option', 'id');
+                        return \App\Models\Layanan::where('status', 'aktif')->orderBy('nama_layanan')->get()->pluck('formatted_option', 'id');
                     })
                     ->required()
                     ->searchable()

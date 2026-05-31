@@ -26,14 +26,14 @@ class PendapatanChart extends ChartWidget
         $now = now();
         $start = $now->copy()->startOfWeek();
         $end = $now->copy()->endOfWeek();
-        
+
         $data = [];
         for ($i = 1; $i <= 30; $i++) {
-            if(auth()->user()->role != 'admin'){
+            if (auth()->user()->role != 'admin' && auth()->user()->role != 'owner') {
                 $total_pendapatan = Bagipendapatan::where('user_id', auth()->user()->id)
-                                    ->whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])
-                                    ->sum('bagian_karyawan');
-            }else{
+                    ->whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])
+                    ->sum('bagian_karyawan');
+            } else {
                 $total_pendapatan = Transaksi::whereBetween('created_at', [now()->startOfMonth()->addDays($i - 1)->startOfDay(), now()->startOfMonth()->addDays($i - 1)->endOfDay()])->get()->sum(fn(Transaksi $transaksi): int => $transaksi->layanan->harga);
             }
             $data[] = $total_pendapatan;

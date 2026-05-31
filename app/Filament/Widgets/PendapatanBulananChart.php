@@ -31,7 +31,7 @@ class PendapatanBulananChart extends ChartWidget
             $start = $month->copy()->startOfMonth();
             $end = $month->copy()->endOfMonth();
 
-            if (auth()->user()->role != 'admin') {
+            if (auth()->user()->role != 'admin' && auth()->user()->role != 'owner') {
                 $total_pendapatan = Bagipendapatan::where('user_id', auth()->user()->id)
                     ->whereBetween('created_at', [$start, $end])
                     ->sum('bagian_karyawan');
@@ -39,7 +39,7 @@ class PendapatanBulananChart extends ChartWidget
                 $pendapatan_kotor = Transaksi::with('layanan')
                     ->whereBetween('created_at', [$start, $end])
                     ->get()
-                    ->sum(fn(Transaksi $transaksi): int => $transaksi->layanan->harga ?? 0);
+                    ->sum(fn(Transaksi $transaksi): int => $transaksi->layanan?->harga ?? 0);
 
                 $pengeluaran = Pengeluaran::whereBetween('created_at', [$start, $end])
                     ->sum('jumlah');

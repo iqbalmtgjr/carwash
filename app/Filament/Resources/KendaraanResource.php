@@ -27,11 +27,7 @@ class KendaraanResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
-            return true;
-        }
-
-        return false;
+        return auth()->user()?->role === 'owner';
     }
 
     public static function canViewAny(): bool

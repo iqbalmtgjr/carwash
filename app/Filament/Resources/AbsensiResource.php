@@ -27,12 +27,12 @@ class AbsensiResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['admin', 'owner']);
+        return auth()->user()?->role === 'owner';
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['admin', 'owner']);
+        return auth()->user()?->role === 'owner';
     }
 
     public static function form(Form $form): Form

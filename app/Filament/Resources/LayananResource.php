@@ -9,7 +9,9 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\LayananResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -27,11 +29,7 @@ class LayananResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        if (in_array(auth()->user()->role, ['admin', 'owner'])) {
-            return true;
-        }
-
-        return false;
+        return auth()->user()?->role === 'owner';
     }
 
     public static function canViewAny(): bool
@@ -57,6 +55,14 @@ class LayananResource extends Resource
                     ->placeholder('Tanpa titik. Contoh: 20000')
                     ->numeric()
                     ->label('Pembagian ke Karyawan'),
+                Select::make('status')
+                    ->label('Status')
+                    ->options([
+                        'aktif'       => 'Aktif',
+                        'tidak_aktif' => 'Tidak Aktif',
+                    ])
+                    ->default('aktif')
+                    ->required(),
             ]);
     }
 
@@ -64,7 +70,7 @@ class LayananResource extends Resource
     {
         return $table
             ->defaultPaginationPageOption('all')
-            ->query(Layanan::query()->orderBy('created_at', 'desc'))
+            ->query(Layanan::query()->orderBy('status', 'asc')->orderBy('nama_layanan', 'asc'))
             ->columns([
                 TextColumn::make('nama_layanan')
                     ->label('Layanan')
@@ -79,11 +85,28 @@ class LayananResource extends Resource
                     ->money('IDR')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn(string $state): string => $state === 'aktif' ? 'success' : 'danger')
+                    ->formatStateUsing(fn(string $state): string => $state === 'aktif' ? 'Aktif' : 'Tidak Aktif'),
             ])
             ->filters([
-                //
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'aktif'       => 'Aktif',
+                        'tidak_aktif' => 'Tidak Aktif',
+                    ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('toggleStatus')
+                    ->label(fn(Layanan $record): string => $record->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan')
+                    ->icon(fn(Layanan $record): string => $record->status === 'aktif' ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn(Layanan $record): string => $record->status === 'aktif' ? 'danger' : 'success')
+                    ->action(fn(Layanan $record) => $record->update([
+                        'status' => $record->status === 'aktif' ? 'tidak_aktif' : 'aktif',
+                    ])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

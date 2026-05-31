@@ -24,7 +24,7 @@ class LaporanKeuangan extends Page
 
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()?->role, ['admin', 'owner']);
+        return auth()->user()?->role === 'owner';
     }
 
     public function mount(): void
